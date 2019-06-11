@@ -32,7 +32,9 @@ public class CityCreate : MonoBehaviour
     public GameObject StraightRenderer;                 // 直線ツールの補助線
     private GameObject StraightObj;                     // 補助線のインスタンス
 
-    bool build_flag = false;                            // 建物生成が終わったか
+    public bool build_flag = false;                     // 建物生成が終わったか
+    public GameObject CrossObj;                         // 交点確認用オブジェクト
+
 
     int k = 0;
 
@@ -177,6 +179,14 @@ public class CityCreate : MonoBehaviour
             build_flag = true;
         }
 
+        // 交点確認
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            for (int i = 0; i < Cross.Count; i++)
+            {
+                Instantiate(CrossObj, new Vector3(Cross[i].x, 9.0f, Cross[i].z), Quaternion.identity);
+            }
+        }
     }
 
     // 線オブジェクトの追加を行う
@@ -381,8 +391,24 @@ public class CityCreate : MonoBehaviour
                                             Building.transform.localScale.z * (Mathf.Abs((2 * BuildPos.z - 2 * crossMin.z)) / depth) 
                                         );
          
-
-
+        /*
+        if(Building.GetComponent<Build_Hit>().hit == true)
+        {
+            Debug.Log("!!");
+            float floor = Building.transform.localScale.x * Building.transform.localScale.z;
+            float other_floor = Building.GetComponent<Build_Hit>().otherBuilding.transform.localScale.x * Building.GetComponent<Build_Hit>().otherBuilding.transform.localScale.z;
+            if(floor >= other_floor)
+            {
+                GameObject.Find(Building.GetComponent<Build_Hit>().otherBuilding.name).SetActive(false);
+            }
+            else
+            {
+                Building.SetActive(false);
+            }
+        }
+         
+         */
+ 
         /*
         // 他の建物との衝突判定(準備)
         Build_proparty = new List<float>();

@@ -155,6 +155,9 @@ MonoBehaviour:
   buildGenerateCount: 2000
   StraightRenderer: {fileID: 4311033626688535364, guid: a97fe6581c98d5845b3c90a2865b0c95,
     type: 3}
+  build_flag: 0
+  CrossObj: {fileID: 3734467929189271041, guid: 2e94b61072fe50b49a420e430cc95da3,
+    type: 3}
 --- !u!65 &100720432
 BoxCollider:
   m_ObjectHideFlags: 0
