@@ -33,16 +33,15 @@ public class CityCreate : MonoBehaviour
     private GameObject StraightObj;                     // 補助線のインスタンス
 
     public bool build_flag = false;                     // 建物生成が終わったか
-    public GameObject CrossObj;                         // 交点確認用オブジェクト
+    public GameObject CrossObj;                         // 交点確認用オブジェクト    
 
-
-    int k = 0;
+    public GameObject Floor;                            // 床オブジェクト
+    public GameObject Guide;                            // ガイドの床
+    public GameObject ViewCamera;                       // 眺めるモードのカメラ
 
     // Start is called before the first frame update
     void Start()
     {
-
-
 
         LineRendererList = new List<LineRenderer>();
         Line = new List<Vector3>();
@@ -61,7 +60,7 @@ public class CityCreate : MonoBehaviour
     void Update()
     {
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && build_flag == false)
         {
             this.AddLineObject();
             if (straight_flag == true)
@@ -78,7 +77,7 @@ public class CityCreate : MonoBehaviour
         }
 
         // LineRendererに位置データを指定しておく
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0) && build_flag == false)
         {
             // 直線ツールを使っていないとき
             if(straight_flag == false)
@@ -102,7 +101,7 @@ public class CityCreate : MonoBehaviour
             
         }
 
-        if (Input.GetMouseButtonUp(0))      // (建物が生成されている間は無効)
+        if (Input.GetMouseButtonUp(0) && build_flag == false)      // (建物が生成されている間は無効)
         {
             // 直線ツールを起動していたら
             if (straight_flag == true)
@@ -169,18 +168,29 @@ public class CityCreate : MonoBehaviour
         }
 
         // 建物生成
-        if (Input.GetKeyDown(KeyCode.Space))
-        {             
+        if (Input.GetKeyDown(KeyCode.Space) && build_flag == false)
+        {
+
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             for (int i = 0; i < buildGenerateCount; i++)
             {
                 BuildGenerate(i);
             }
-
+           
             build_flag = true;
+
+            // 床と眺めるカメラを設置
+            Guide.SetActive(false);
+            Floor.SetActive(true);
+            ViewCamera.SetActive(true);
+
+            sw.Stop();
+            Debug.Log(sw.ElapsedMilliseconds + "ms");
         }
 
         // 交点確認
-        if (Input.GetKeyDown(KeyCode.A))
+        if (Input.GetKeyDown(KeyCode.A) )
         {
             for (int i = 0; i < Cross.Count; i++)
             {
