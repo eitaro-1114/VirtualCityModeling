@@ -18,8 +18,8 @@ public class Build_Hit : MonoBehaviour
     private void Update()
     {
 
-        // 面積が負になったら消す
-        if(this.gameObject.transform.localScale.x <= 0 || this.gameObject.transform.localScale.z <= 0)
+        // 面積が負になったら消す or 
+        if(this.gameObject.transform.localScale.x <= 0 || this.gameObject.transform.localScale.z <= 0 || this.gameObject.transform.localScale.x > this.gameObject.transform.localScale.z * 3 || this.gameObject.transform.localScale.z > this.gameObject.transform.localScale.x * 3)
         {
             this.gameObject.SetActive(false);
         }
