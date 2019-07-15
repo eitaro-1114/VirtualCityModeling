@@ -4,6 +4,36 @@ using System.Linq;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+// クラスの練習
+public class SegmentIndex
+{
+    public int p0a;
+    public int p0b;
+
+    public int p1a;
+    public int p1b;
+
+    public int q0a;
+    public int q0b;
+
+    public int q1a;
+    public int q1b;
+
+    public SegmentIndex(int p0a, int p0b, int p1a, int p1b, int q0a, int q0b, int q1a, int q1b)
+    {
+        this.p0a = p0a;
+        this.p0b = p0b;
+        this.p1a = p1a;
+        this.p1b = p1b;
+
+        this.q0a = q0a;
+        this.q0b = q0b;
+        this.q1a = q1a;
+        this.q1b = q1b;
+    }
+
+}
+
 public class CityCreate : MonoBehaviour
 {
 
@@ -11,7 +41,9 @@ public class CityCreate : MonoBehaviour
     private List<Vector3> Line;                         // 1本の線の頂点群
     public GameObject Line_Collider;                    // Lineの衝突判定
     private List<LineRenderer> LineRendererList;        // LineRendererの頂点リスト
-    int line_cnt = 0;                                   // Lineの本数
+    private List<SegmentIndex> CrossPair;                        // 交差した線分対
+    private List<List<int>> CrossPairs;                 // 交差した線分対の集まり
+    private int line_cnt = 0;                           // Lineの本数
     private List<List<Vector3>> Lines;                  // 線群
     private List<Vector3> Cross;                        // 交点群
     private GameObject LinesObj;                        // Lineをまとめる親
@@ -48,6 +80,7 @@ public class CityCreate : MonoBehaviour
         Lines = new List<List<Vector3>>();
         Cross = new List<Vector3>();
         Build_proparties = new List<List<float>>();
+        CrossPair = new List<SegmentIndex>();
 
         // 曲線をまとめる親Obj
         LinesObj = Instantiate(ParentObj, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
@@ -116,16 +149,7 @@ public class CityCreate : MonoBehaviour
             Lines.Add(Line);       //Linesに線情報を追加
             Line = new List<Vector3>();
 
-            for (int j = 0; j < Lines.Count; j++)    //最後の一つ前までの線分
-            {
-                for (int k = 1; k < Lines[j].Count; k++)     //その線分の要素数
-                {
-                    for (int h = 1; h < Lines[Lines.Count - 1].Count; h++)   //最後の線分の要素数
-                    {
-                        CrossJudge(Lines[Lines.Count - 1][h - 1].x, Lines[Lines.Count - 1][h - 1].z, Lines[Lines.Count - 1][h].x, Lines[Lines.Count - 1][h].z, Lines[j][k - 1].x, Lines[j][k - 1].z, Lines[j][k].x, Lines[j][k].z);
-                    }
-                }
-            }
+
 
         }
 
@@ -173,11 +197,71 @@ public class CityCreate : MonoBehaviour
 
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
+
+            /*
             for (int i = 0; i < buildGenerateCount; i++)
             {
                 BuildGenerate(i);
+            }            
+             */
+
+            /*
+            for(int i = 0; i < GameObject.Find("Lines").transform.childCount; i++)
+            {
+                for(int k = 0; k < GameObject.Find("Line " + i).transform.childCount; k++)
+                {
+                    GameObject Segment = GameObject.Find("line" + i + "Collider" + k);
+
+                    if(Segment.GetComponent<Cross>().cross_flag == true)
+                    {
+                        // Debug.Log("this_x : " + Segment.GetComponent<Cross>().this_x + "  this_y : " + Segment.GetComponent<Cross>().this_y + "  other_x : " + Segment.GetComponent<Cross>().other_x + "  other_y : " + Segment.GetComponent<Cross>().other_y);
+                    }
+
+                    Segment.GetComponent<BoxCollider>().isTrigger = false;
+                }
+
             }
-           
+             */
+            
+            for(int i = 0; i < Lines.Count; i++)
+            {
+                for(int k = 0; k < Lines[i].Count - 1; k++)
+                {
+                    Vector2 p0 = new Vector2(Lines[i][k].x, Lines[i][k].z);
+                    Vector2 p1 = new Vector2(Lines[i][k + 1].x, Lines[i][k + 1].z);
+
+                    for(int j = 0; j < Lines.Count; j++)
+                    {
+                        for(int l = 0; l < Lines[j].Count - 1; l++)
+                        {
+                            Vector2 q0 = new Vector2(Lines[j][l].x, Lines[j][l].z);
+                            Vector2 q1 = new Vector2(Lines[j][l + 1].x, Lines[j][l + 1].z);
+
+                            SegmentIndex nowSegmentIndex = new SegmentIndex(i, k, i, k + 1, j, l, j, l + 1);
+
+                            bool judge_flag = true;
+
+
+                            // 頂点のインデックスが入れ替わっていると同じ判定を二回繰り返してしまう
+                            for (int m = 0; m < CrossPair.Count; m++)
+                            {
+                                if (CrossPair[m].p0a == j && CrossPair[m].p0b == l && CrossPair[m].p1a == j && CrossPair[m].p1b == l + 1 && CrossPair[m].q0a == i && CrossPair[m].q0b == k && CrossPair[m].q1a == i && CrossPair[m].q1b == k + 1)
+                                {
+                                    // 頂点が入れ替わっているだけならフラグをfalseに
+                                    judge_flag = false;
+                                }
+                            }
+                            
+                            if(judge_flag == true)
+                            {
+                                CrossJudge(p0, p1, q0, q1, nowSegmentIndex, Lines[i], Lines[j]);
+                            }  
+
+                        }
+                    }
+                }
+            }
+
             build_flag = true;
 
             // 床と眺めるカメラを設置
@@ -187,6 +271,7 @@ public class CityCreate : MonoBehaviour
 
             sw.Stop();
             Debug.Log(sw.ElapsedMilliseconds + "ms");
+
         }
 
         // 交点確認
@@ -249,7 +334,6 @@ public class CityCreate : MonoBehaviour
     // 描く線のコンポーネントリストに位置情報を登録していく
     private void AddPositionDataToLineRendererList()
     {
-
         // 座標の変換を行いマウス位置を取得
         Vector3 screenPosition01 = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1.0f);
         Vector3 screenPosition02 = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1.1f);
@@ -268,7 +352,7 @@ public class CityCreate : MonoBehaviour
                 (Line[Line.Count - 2].z + Line[Line.Count - 1].z) / 2
             );
             GameObject lineCollider = Instantiate(Line_Collider, colliderPos, Quaternion.identity);
-            lineCollider.name = "lineCollider" + (Line.Count - 2);
+            lineCollider.name = "line" + line_cnt + "Collider" + (Line.Count - 2);
             lineCollider.tag = "Rord";
 
             // Lineオブジェクトの子にする
@@ -277,6 +361,7 @@ public class CityCreate : MonoBehaviour
 
             // 空ObjにBoxColliderをアタッチ
             lineCollider.AddComponent<BoxCollider>();
+            lineCollider.GetComponent<BoxCollider>().isTrigger = true;
 
             // 空ObjにRigidBodyをアタッチ
             lineCollider.AddComponent<Rigidbody>();
@@ -304,7 +389,7 @@ public class CityCreate : MonoBehaviour
         }
 
         // 線と線をつなぐ点の数を更新
-        LineRendererList.Last().positionCount += 1;
+        LineRendererList.Last().positionCount++;
         //activityObjectList.Last().positionCount += 1;
 
         // 描く線のコンポーネントリストを更新
@@ -314,29 +399,57 @@ public class CityCreate : MonoBehaviour
     }
 
     //交差判定
-    private void CrossJudge(float p0x, float p0y, float p1x, float p1y, float q0x, float q0y, float q1x, float q1y)
+    private void CrossJudge(Vector2 p0, Vector2 p1, Vector2 q0, Vector2 q1, SegmentIndex segmentIndex, List<Vector3> Line01, List<Vector3> Line02)
     {
 
-        float dpx = p1x - p0x;
-        float dpy = p1y - p0y;
-        float dqx = q1x - q0x;
-        float dqy = q1y - q0y;
+        float dpx = p1.x - p0.x;
+        float dpy = p1.y - p0.y;
+        float dqx = q1.x - q0.x;
+        float dqy = q1.y - q0.y;
 
-        float ta = (q0x - q1x) * (p0y - q0y) + (q0y - q1y) * (q0x - p0x);
-        float tb = (q0x - q1x) * (p1y - q0y) + (q0y - q1y) * (q0x - p1x);
-        float tc = (p0x - p1x) * (q0y - p0y) + (p0y - p1y) * (p0x - q0x);
-        float td = (p0x - p1x) * (q1y - p0y) + (p0y - p1y) * (p0x - q1x);
+        float ta = (q0.x - q1.x) * (p0.y - q0.y) + (q0.y - q1.y) * (q0.x - p0.x);
+        float tb = (q0.x - q1.x) * (p1.y - q0.y) + (q0.y - q1.y) * (q0.x - p1.x);
+        float tc = (p0.x - p1.x) * (q0.y - p0.y) + (p0.y - p1.y) * (p0.x - q0.x);
+        float td = (p0.x - p1.x) * (q1.y - p0.y) + (p0.y - p1.y) * (p0.x - q1.x);
 
         if (ta * tb < 0 && tc * td < 0)
         {
-            float s1 = ((q0x - q1x) * (p0y - p1y) - (q0y - q1y) * (p0x - q1x)) / 2;
-            float s2 = ((q0x - q1x) * (q1y - p1y) - (q0y - q1y) * (q1x - p1x)) / 2;
+            float s1 = ((q0.x - q1.x) * (p0.y - p1.y) - (q0.y - q1.y) * (p0.x - q1.x)) / 2;
+            float s2 = ((q0.x - q1.x) * (q1.y - p1.y) - (q0.y - q1.y) * (q1.x - p1.x)) / 2;
 
             float a = dpx * dqy - dqx * dpy;
-            float x = (dpx * dqx * (p0y - q0y) + dpx * dqy * q0x - dqx * dpy * p0x) / a;
-            float y = (dpy * dqy * (q0x - p0x) + dpx * dqy * p0y - dqx * dpy * q0y) / a;
+            float x = (dpx * dqx * (p0.y - q0.y) + dpx * dqy * q0.x - dqx * dpy * p0.x) / a;
+            float y = (dpy * dqy * (q0.x - p0.x) + dpx * dqy * p0.y - dqx * dpy * q0.y) / a;
 
             // Instantiate(CrossObj, new Vector3(x, 9.0f, y), Quaternion.identity);
+            CrossPair.Add(segmentIndex);
+
+            // 交点を,線分を形成する1頂点として挿入
+            int line01_a = segmentIndex.p1a;
+            int line01_b = segmentIndex.p1b;
+            // Line01.Insert(line01_b, new Vector3(x, 9.0f, y));
+            // Lines[line01_a].Insert(line01_b, new Vector3(x, 9.0f, y));
+            // Lines[segmentIndex.q1a].Insert(segmentIndex.q1b, new Vector3(x, 9.0f, y));
+
+
+            // GameObject segment01 = GameObject.Find("Line " + segmentIndex.p0a);
+            // GameObject segment02 = GameObject.Find("Line " + segmentIndex.q0a);
+
+            /*
+            segment01.GetComponent<LineRenderer>().positionCount++;
+            segment02.GetComponent<LineRenderer>().positionCount++;
+
+            Vector3[] segment01points = Lines[segmentIndex.p1a].ToArray();
+            segment01.GetComponent<LineRenderer>().SetPositions(segment01points);
+
+            Vector3[] segment02points = Lines[segmentIndex.q1a].ToArray();
+            segment02.GetComponent<LineRenderer>().SetPositions(segment02points);
+
+            Debug.Log(segment01.name);
+             
+             */
+
+
             Cross.Add(new Vector3(x, 9.0f, y));
 
         }
