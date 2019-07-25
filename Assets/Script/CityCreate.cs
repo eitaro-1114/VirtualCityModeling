@@ -34,6 +34,27 @@ public class SegmentIndex
 
 }
 
+// 交点が
+// 1．どの曲線上にあるか
+// 2．どの線分上にあるか
+// 3．交点座標
+public class CrossPropaty
+{
+    // インデックス(Lines[CurveIndex][Segmentindex])
+    public int CurveIndex;              
+    public int SegmentIndex;
+
+    // 交点座標
+    public Vector3 CrossCoordinate;     
+
+    public CrossPropaty(int CurveIndex, int SegmentIndex , Vector3 Cross)
+    {
+        this.CurveIndex = CurveIndex;
+        this.SegmentIndex = SegmentIndex;
+        this.CrossCoordinate = Cross;
+    }
+}
+
 public class CityCreate : MonoBehaviour
 {
 
@@ -41,8 +62,8 @@ public class CityCreate : MonoBehaviour
     private List<Vector3> Line;                         // 1本の線の頂点群
     public GameObject Line_Collider;                    // Lineの衝突判定
     private List<LineRenderer> LineRendererList;        // LineRendererの頂点リスト
-    private List<SegmentIndex> CrossPair;                        // 交差した線分対
-    private List<List<int>> CrossPairs;                 // 交差した線分対の集まり
+    private List<SegmentIndex> CrossPair;               // 交差した線分対
+    private List<CrossPropaty> CrossPropaties;          // 交点の情報群
     private int line_cnt = 0;                           // Lineの本数
     private List<List<Vector3>> Lines;                  // 線群
     private List<Vector3> Cross;                        // 交点群
@@ -81,6 +102,7 @@ public class CityCreate : MonoBehaviour
         Cross = new List<Vector3>();
         Build_proparties = new List<List<float>>();
         CrossPair = new List<SegmentIndex>();
+        CrossPropaties = new List<CrossPropaty>();
 
         // 曲線をまとめる親Obj
         LinesObj = Instantiate(ParentObj, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
@@ -223,6 +245,7 @@ public class CityCreate : MonoBehaviour
             }
              */
             
+            // 交点列挙
             for(int i = 0; i < Lines.Count; i++)
             {
                 for(int k = 0; k < Lines[i].Count - 1; k++)
@@ -260,6 +283,28 @@ public class CityCreate : MonoBehaviour
                         }
                     }
                 }
+            }
+
+            // リストのソート
+            CrossPropaties.Sort((a, b) => a.CurveIndex - b.CurveIndex);
+            for (int i = 0; i < CrossPropaties.Count - 1; i++)
+            {
+                if(CrossPropaties[i].CurveIndex == CrossPropaties[i + 1].CurveIndex)
+                {
+                    Vector3 target_point = Lines[CrossPropaties[i].CurveIndex][CrossPropaties[i].SegmentIndex - 1];
+                    float distance01 = Mathf.Sqrt((target_point.x - CrossPropaties[i].CrossCoordinate.x) * (target_point.x - CrossPropaties[i].CrossCoordinate.x) + (target_point.z - CrossPropaties[i].CrossCoordinate.z) * (target_point.z - CrossPropaties[i].CrossCoordinate.z));
+                    float distance02 = Mathf.Sqrt((target_point.x - CrossPropaties[i + 1].CrossCoordinate.x) * (target_point.x - CrossPropaties[i + 1].CrossCoordinate.x) + (target_point.z - CrossPropaties[i + 1].CrossCoordinate.z) * (target_point.z - CrossPropaties[i + 1].CrossCoordinate.z));
+
+                    if(distance01 >= distance02)
+                    {
+                        // 2要素の順番を入れ替える
+                    }
+                }                
+            }
+
+            for (int i = 0; i < CrossPropaties.Count; i++)
+            {
+                Debug.Log(CrossPropaties[i].CurveIndex + "  " + CrossPropaties[i].SegmentIndex + "  " + CrossPropaties[i].CrossCoordinate);
             }
 
             build_flag = true;
@@ -426,7 +471,13 @@ public class CityCreate : MonoBehaviour
 
             // 交点を,線分を形成する1頂点として挿入
             int line01_a = segmentIndex.p1a;
-            int line01_b = segmentIndex.p1b;
+            int line01_b = segmentIndex.p1b;            
+
+            CrossPropaty cross_a = new CrossPropaty(segmentIndex.p1a, segmentIndex.p1b, new Vector3(x, 9.0f, y));
+            CrossPropaty cross_b = new CrossPropaty(segmentIndex.q1a, segmentIndex.q1b, new Vector3(x, 9.0f, y));
+
+            CrossPropaties.Add(cross_a);
+            CrossPropaties.Add(cross_b);
             // Line01.Insert(line01_b, new Vector3(x, 9.0f, y));
             // Lines[line01_a].Insert(line01_b, new Vector3(x, 9.0f, y));
             // Lines[segmentIndex.q1a].Insert(segmentIndex.q1b, new Vector3(x, 9.0f, y));
