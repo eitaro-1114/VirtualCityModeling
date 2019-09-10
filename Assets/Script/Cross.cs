@@ -25,7 +25,7 @@ public class Cross : MonoBehaviour
     {
         cross_segments = new List<List<Vector2>>();
 
-        this_segment = new Vector2(int.Parse(this.gameObject.name.Substring(4, 1)), int.Parse(this.gameObject.name.Substring(13, 1)));
+        // this_segment = new Vector2(int.Parse(this.gameObject.name.Substring(4, 1)), int.Parse(this.gameObject.name.Substring(13, 1)));
     }
     /*
       private void OnTriggerStay(Collider other)
