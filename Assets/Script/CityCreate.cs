@@ -718,7 +718,7 @@ public class CityCreate : MonoBehaviour
                                 nextPointCandiIndex.Add(new IntPair(a, b + c));
                             }
 
-                            // 候補が二つ以上あるなら，始点との内積が小さいほうを選択．1つもなかったら領域検索失敗，始点を変える
+                            // 候補が二つ以上あるなら，始点との外積が小さいほうを選択．1つもなかったら領域検索失敗，始点を変える
                             VertexAttribute nextPointFinalCandi = null;        // 最終候補
 
                             if(nextPointCandi.Count == 1)
@@ -729,18 +729,30 @@ public class CityCreate : MonoBehaviour
                             }
                             else if (nextPointCandi.Count >= 2) {
 
-                                List<float> dots = new List<float>();
+                                List<float> crosses = new List<float>();
 
-                                for(int l = 0; l < nextPointCandi.Count; l++)
+                                // 始点ベクトル
+                                float x_start = nextpoint.coodi.x - vertex[a][b - c].coodi.x;
+                                float y_start = nextpoint.coodi.z - vertex[a][b - c].coodi.z;
+                                float length_start = Mathf.Sqrt(x_start * x_start + y_start * y_start);
+                                Vector2 vector_start = new Vector2(x_start / length_start, y_start / length_start);
+
+                                for (int l = 0; l < nextPointCandi.Count; l++)
                                 {
-                                    float dot = startpoint.coodi.x * nextPointCandi[l].coodi.x + startpoint.coodi.z * nextPointCandi[l].coodi.z;
-                                    dots.Add(dot);
+                                    // 候補ベクトル
+                                    float x_next = nextPointCandi[l].coodi.x - nextpoint.coodi.x;
+                                    float y_next = nextPointCandi[l].coodi.z - nextpoint.coodi.z;
+                                    float length_next = Mathf.Sqrt(x_next * x_next + y_next * y_next);
+                                    Vector2 vector_next = new Vector2(x_next / length_next, y_next / length_next);
+
+                                    float cross = vector_start.x * vector_next.y - vector_start.y * vector_next.x;
+                                    crosses.Add(cross);
                                 }
 
-                                float dot_Min = 0.0f;
+                                float cross_Min = 0.0f;
 
-                                // 内積の最小値を取り出し，それに対応した頂点を最終候補とする
-                                for (int l = 0; l < dots.Count; l++)
+                                // 外積の最小値を取り出し，それに対応した頂点を最終候補とする
+                                for (int l = 0; l < crosses.Count; l++)
                                 {
                                     if(l == 0)
                                     {
@@ -748,14 +760,14 @@ public class CityCreate : MonoBehaviour
                                         a = nextPointCandiIndex[l].i;
                                         b = nextPointCandiIndex[l].j;
 
-                                        dot_Min = dots[l];
+                                        cross_Min = crosses[l];
                                     }
-                                    else if(dots[l] < dot_Min)
+                                    else if(crosses[l] < cross_Min)
                                     {
                                         nextPointFinalCandi = nextPointCandi[l];
                                         a = nextPointCandiIndex[l].i;
                                         b = nextPointCandiIndex[l].j;
-                                        dot_Min = dots[l];
+                                        cross_Min = crosses[l];
                                     }
                                 }
                             }
@@ -781,7 +793,7 @@ public class CityCreate : MonoBehaviour
                             // 候補をnextpointsに入れる
                             nextpoints.Add(nextPointFinalCandi);
 
-                            // [crossIndex.i][crossIndex.j - 1]か[a][b + c](c == -1)を選択した場合，次のループは[a][b - 1],[a][b - 2]....としなければいけない
+                            // [crossIndex.i][crossIndex.j - 1]か[a][b + c](c == -1 まっすぐ)を選択した場合，次のループは[a][b - 1],[a][b - 2]....としなければいけない
                             if(b == crossIndex.j - 1)
                             {
                                 minus_flag = true;
