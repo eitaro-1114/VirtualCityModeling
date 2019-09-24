@@ -152,7 +152,7 @@ MonoBehaviour:
   Build: {fileID: 7819773314308674399, guid: 0778ea8c3b3815842bf887081fcd34ee, type: 3}
   Buildings: {fileID: 3990428792599670397, guid: 20c8bdefd873cc84fb8a5a54d82d421e,
     type: 3}
-  buildGenerateCount: 500
+  buildGenerateCount: 2000
   StraightRenderer: {fileID: 4311033626688535364, guid: a97fe6581c98d5845b3c90a2865b0c95,
     type: 3}
   build_flag: 0
