@@ -69,6 +69,7 @@ public class VertexAttribute
 
 }
 
+<<<<<<< HEAD
 public class AreaAttribute
 {
     public List<VertexAttribute> areapoints;
@@ -77,6 +78,8 @@ public class AreaAttribute
     public float scale;
 }
 
+=======
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
 // 交点を形成しているもう一つの線分のインデックス
 public class IntPair
 {
@@ -271,7 +274,11 @@ public class CityCreate : MonoBehaviour
                 }
 
             }
+<<<<<<< HEAD
             */
+=======
+             */
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
             
             // 交点列挙
             for(int i = 0; i < Lines.Count; i++)
@@ -340,7 +347,11 @@ public class CityCreate : MonoBehaviour
                         CrossPropaties.RemoveAt(i);
                         // b番目の要素の後にAを追加
                         CrossPropaties.Insert(i + 1, I);
+<<<<<<< HEAD
                         // Debug.Log("!!");
+=======
+                        Debug.Log("!!");
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
                         
                     }
                 }
@@ -418,20 +429,33 @@ public class CityCreate : MonoBehaviour
             {
                 for (int j = 0; j < Vertex_and_Intersections[i].Count; j++)
                 {
+<<<<<<< HEAD
                     // Debug.Log("i = " + i + "  j = " + j + "  " +  Vertex_and_Intersections[i][j].coodi + "  attribute = " + Vertex_and_Intersections[i][j].attribute);
+=======
+                    Debug.Log("i = " + i + "  j = " + j + "  " +  Vertex_and_Intersections[i][j].coodi + "  attribute = " + Vertex_and_Intersections[i][j].attribute);
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
                 }
             }
 
             // 閉領域を検出            
+<<<<<<< HEAD
             List<List<VertexAttribute>> PreAreas = new List<List<VertexAttribute>>();
             PreAreas = AriaSerch(Vertex_and_Intersections);
             Debug.Log(PreAreas.Count);
             List<Vector3> PreCenters = new List<Vector3>();
             for(int i = 0; i < PreAreas.Count; i++)
+=======
+            List<List<VertexAttribute>> Arias = new List<List<VertexAttribute>>();
+            Arias = AriaSerch(Vertex_and_Intersections);
+            Debug.Log(Arias.Count);
+            List<Vector3> Centers = new List<Vector3>();
+            for(int i = 0; i < Arias.Count; i++)
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
             {
                 float center_x = 0;
                 float center_z = 0;
                 int n = 0;
+<<<<<<< HEAD
                 for (int j = 0; j < PreAreas[i].Count; j++)
                 {
                     center_x += PreAreas[i][j].coodi.x;
@@ -469,6 +493,21 @@ public class CityCreate : MonoBehaviour
             for(int i = 0; i < PreCenters.Count; i++)
             {
                 GameObject AreaCenter = Instantiate(CrossObj, PreCenters[i], Quaternion.identity);
+=======
+                for (int j = 0; j < Arias[i].Count; j++)
+                {
+                    center_x += Arias[i][j].coodi.x;
+                    center_z += Arias[i][j].coodi.z;
+                    n++;
+                }
+                Vector3 Center = new Vector3(center_x / n, 9.0f, center_z / n);
+                Centers.Add(Center);
+            }
+
+            for(int i = 0; i < Centers.Count; i++)
+            {
+                GameObject AreaCenter = Instantiate(CrossObj, Centers[i], Quaternion.identity);
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
             }
             build_flag = true;
 
@@ -705,18 +744,32 @@ public class CityCreate : MonoBehaviour
                         {
                             nextpoints.Add(nextpoint);
                             IntPair crossIndex = SerchCrossPair(nextpoint, a, b, vertex);                            
+<<<<<<< HEAD
                             // Debug.Log("Pair : ("  + a + ", " + b + ") : (" + crossIndex.i + ", " + crossIndex.j + ")");
                             // Debug.Log(vertex[a][b].coodi);
                             // Debug.Log(nextpoint.coodi);
                             // Debug.Log(vertex[crossIndex.i][crossIndex.j].coodi);
+=======
+                            Debug.Log("Pair : ("  + a + ", " + b + ") : (" + crossIndex.i + ", " + crossIndex.j + ")");
+                            Debug.Log(vertex[a][b].coodi);
+                            Debug.Log(nextpoint.coodi);
+                            Debug.Log(vertex[crossIndex.i][crossIndex.j].coodi);
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
                             // 次々点探索
                             // 右に行くか([crossIndex.i][crossIndex.j + 1])左に行くか([crossIndex.i][crossIndex.j - 1])まっすぐ行くか([a][b + 1])判定
 
                             // 次々点が始点なら最優先で
+<<<<<<< HEAD
                             // Debug.Log(crossIndex.i + "  " + (crossIndex.j + 1));
                             // Debug.Log(crossIndex.i + "  " + (crossIndex.j - 1));
                             // Debug.Log(a + "  " + (b + c));
                             // Debug.Log("----------");
+=======
+                            Debug.Log(crossIndex.i + "  " + (crossIndex.j + 1));
+                            Debug.Log(crossIndex.i + "  " + (crossIndex.j - 1));
+                            Debug.Log(a + "  " + (b + c));
+                            Debug.Log("----------");
+>>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
 
                             if (vertex[crossIndex.i][crossIndex.j + 1].coodi == startpoint.coodi || vertex[crossIndex.i][crossIndex.j - 1].coodi == startpoint.coodi || vertex[a][b + c].coodi == startpoint.coodi)
                             {
