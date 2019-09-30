@@ -69,7 +69,6 @@ public class VertexAttribute
 
 }
 
-<<<<<<< HEAD
 public class AreaAttribute
 {
     public List<VertexAttribute> areapoints;
@@ -78,8 +77,6 @@ public class AreaAttribute
     public float scale;
 }
 
-=======
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
 // 交点を形成しているもう一つの線分のインデックス
 public class IntPair
 {
@@ -165,7 +162,7 @@ public class CityCreate : MonoBehaviour
 
                 // 直線の状態を見せるため
                 StraightList = new List<Vector3>();
-                StraightList.Add(Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1.0f)));
+                StraightList.Add(Camera.main.ScreenToWorldPoint(new Vector3(Mathf.Floor(Input.mousePosition.x), Mathf.Floor(Input.mousePosition.y), 1.0f)));
                 StraightObj = Instantiate(StraightRenderer, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
 
             }
@@ -191,7 +188,7 @@ public class CityCreate : MonoBehaviour
                 straightRender.endWidth = 5.0f;
 
                 straightRender.SetPosition(0, StraightList[0]);
-                straightRender.SetPosition(1, Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1.0f)));
+                straightRender.SetPosition(1, Camera.main.ScreenToWorldPoint(new Vector3(Mathf.Floor(Input.mousePosition.x), Mathf.Floor(Input.mousePosition.y), 1.0f)));
             }
             
         }
@@ -274,11 +271,7 @@ public class CityCreate : MonoBehaviour
                 }
 
             }
-<<<<<<< HEAD
             */
-=======
-             */
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
             
             // 交点列挙
             for(int i = 0; i < Lines.Count; i++)
@@ -347,11 +340,7 @@ public class CityCreate : MonoBehaviour
                         CrossPropaties.RemoveAt(i);
                         // b番目の要素の後にAを追加
                         CrossPropaties.Insert(i + 1, I);
-<<<<<<< HEAD
                         // Debug.Log("!!");
-=======
-                        Debug.Log("!!");
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
                         
                     }
                 }
@@ -429,86 +418,14 @@ public class CityCreate : MonoBehaviour
             {
                 for (int j = 0; j < Vertex_and_Intersections[i].Count; j++)
                 {
-<<<<<<< HEAD
                     // Debug.Log("i = " + i + "  j = " + j + "  " +  Vertex_and_Intersections[i][j].coodi + "  attribute = " + Vertex_and_Intersections[i][j].attribute);
-=======
-                    Debug.Log("i = " + i + "  j = " + j + "  " +  Vertex_and_Intersections[i][j].coodi + "  attribute = " + Vertex_and_Intersections[i][j].attribute);
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
                 }
             }
 
             // 閉領域を検出            
-<<<<<<< HEAD
             List<List<VertexAttribute>> PreAreas = new List<List<VertexAttribute>>();
             PreAreas = AriaSerch(Vertex_and_Intersections);
-            Debug.Log(PreAreas.Count);
-            List<Vector3> PreCenters = new List<Vector3>();
-            for(int i = 0; i < PreAreas.Count; i++)
-=======
-            List<List<VertexAttribute>> Arias = new List<List<VertexAttribute>>();
-            Arias = AriaSerch(Vertex_and_Intersections);
-            Debug.Log(Arias.Count);
-            List<Vector3> Centers = new List<Vector3>();
-            for(int i = 0; i < Arias.Count; i++)
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
-            {
-                float center_x = 0;
-                float center_z = 0;
-                int n = 0;
-<<<<<<< HEAD
-                for (int j = 0; j < PreAreas[i].Count; j++)
-                {
-                    center_x += PreAreas[i][j].coodi.x;
-                    center_z += PreAreas[i][j].coodi.z;
-                    n++;
-                }
-                Vector3 Center = new Vector3(center_x / n, 9.0f, center_z / n);
-                PreCenters.Add(Center);
-            }
-
-            List<List<VertexAttribute>> Areas = new List<List<VertexAttribute>>();
-            List<Vector3> Centers = new List<Vector3>();
-            for (int i = 0; i < PreAreas.Count; i++)
-            {
-                if(i == 0)
-                {
-                    Areas.Add(PreAreas[i]);
-                    Centers.Add(PreCenters[i]);
-                }
-                else
-                {
-                    for (int j = 0; j < Centers.Count; j++)
-                    {
-                        if((PreCenters[i].x != Centers[j].x) && (PreCenters[i].z != Centers[j].z))
-                        {
-                            Debug.Log("!!");
-                            Areas.Add(PreAreas[i]);
-                            Centers.Add(PreCenters[i]);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            for(int i = 0; i < PreCenters.Count; i++)
-            {
-                GameObject AreaCenter = Instantiate(CrossObj, PreCenters[i], Quaternion.identity);
-=======
-                for (int j = 0; j < Arias[i].Count; j++)
-                {
-                    center_x += Arias[i][j].coodi.x;
-                    center_z += Arias[i][j].coodi.z;
-                    n++;
-                }
-                Vector3 Center = new Vector3(center_x / n, 9.0f, center_z / n);
-                Centers.Add(Center);
-            }
-
-            for(int i = 0; i < Centers.Count; i++)
-            {
-                GameObject AreaCenter = Instantiate(CrossObj, Centers[i], Quaternion.identity);
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
-            }
+            
             build_flag = true;
 
 
@@ -583,10 +500,9 @@ public class CityCreate : MonoBehaviour
     private void AddPositionDataToLineRendererList()
     {
         // 座標の変換を行いマウス位置を取得
-        Vector3 screenPosition01 = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1.0f);
-        Vector3 screenPosition02 = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1.1f);
+        Vector3 screenPosition01 = new Vector3(Mathf.Floor(Input.mousePosition.x), Mathf.Floor(Input.mousePosition.y), 1.0f);
         var mousePosition = Camera.main.ScreenToWorldPoint(screenPosition01);
-        var activityPosition = Camera.main.ScreenToWorldPoint(screenPosition02);
+        // Debug.Log(mousePosition);
 
         Line.Add(mousePosition);
 
@@ -691,8 +607,495 @@ public class CityCreate : MonoBehaviour
     List<List<VertexAttribute>> AriaSerch(List<List<VertexAttribute>> vertex)
     {
 
-        List<List<VertexAttribute>> Arias = new List<List<VertexAttribute>>();
+        List<List<VertexAttribute>> PreAreas = new List<List<VertexAttribute>>();
 
+        for(int i = 0; i < vertex.Count; i++)
+        {
+            for (int j = 0; j < vertex[i].Count; j++)
+            {
+                // 始点を探す
+                VertexAttribute startpoint = vertex[i][j];
+                // 次点リスト
+                List<VertexAttribute> nextpoints = new List<VertexAttribute>();
+
+
+                if (startpoint.attribute == "cross")
+                {
+
+                    // Debug.Log("now : " + startpoint.coodi);
+                    int nextpointindex_i = i;
+                    int nextpointindex_j = j;
+                    int nextcount = 1;
+                    int nextnextcount = 1;
+                    bool minusflag = false;
+
+                    // 始点が交点にだったら，たどる方向を決める(必ず右側)
+                    IntPair startPair = SerchCrossPair(startpoint, i, j, vertex);
+                    List<VertexAttribute> courseFirstCandi = new List<VertexAttribute>();
+                    if(startPair.j + 1 < vertex[startPair.i].Count)
+                    {
+                        courseFirstCandi.Add(vertex[startPair.i][startPair.j + 1]);
+                    }
+                    if(startPair.j - 1 >= 0)
+                    {
+                        courseFirstCandi.Add(vertex[startPair.i][startPair.j - 1]);
+                    }
+                    if(j + 1 < vertex[i].Count)
+                    {
+                        courseFirstCandi.Add(vertex[i][j + 1]);
+                    }
+
+                    VertexAttribute courseSecondCandi = null;
+                    // 外積の最小を選択
+                    // 最小外積
+                    float coursecrossMin = 0.0f;
+                    // 基点ベクトル
+                    float base_length = Mathf.Sqrt(vertex[i][j].coodi.x * vertex[i][j].coodi.x + vertex[i][j].coodi.z * vertex[i][j].coodi.z);
+                    Vector2 base_vector = new Vector2(vertex[i][j].coodi.x / base_length, vertex[i][j].coodi.z / base_length);
+
+                    for(int k = 0; k < courseFirstCandi.Count; k++)
+                    {
+                        float course_x = courseFirstCandi[k].coodi.x - vertex[i][j].coodi.x;
+                        float course_y = courseFirstCandi[k].coodi.z - vertex[i][j].coodi.z;
+                        float course_length = Mathf.Sqrt(course_x * course_x + course_y * course_y);
+                        Vector2 course_vector = new Vector2(course_x / course_length, course_y / course_length);
+
+                        // 外積
+                        float coursecross = base_vector.x * course_vector.y - base_vector.y * course_vector.x;
+
+                        if (k == 0)
+                        {
+                            coursecrossMin = coursecross;
+                            courseSecondCandi = courseFirstCandi[k];
+                        }
+                        else if(coursecross < coursecrossMin)
+                        {
+                            coursecrossMin = coursecross;
+                            courseSecondCandi = courseFirstCandi[k];
+                        }
+                    }
+
+
+                    // 隣接する交点を探す
+                    for (; ; )
+                    {
+                        // 前週で crossIndex.j - 1が勝っていた場合，今週は負をたどる
+                        if(minusflag == true)
+                        {
+                            nextcount = Mathf.Abs(nextcount) * -1;
+                            nextnextcount = -1;
+                        }
+                        else
+                        {
+                            nextcount = Mathf.Abs(nextcount);
+                            nextnextcount = 1;
+                        }
+
+                        
+                        // 次点候補
+                        VertexAttribute nextpoint = vertex[nextpointindex_i][nextpointindex_j + nextcount];
+
+                        // 進めていって，始点にたどり着いたら，閉領域検出 始点を変える
+                        if (nextpoint.coodi == startpoint.coodi)
+                        {
+                            // Debug.Log("!!");
+                            List<VertexAttribute> Area = new List<VertexAttribute>();
+                            Area.Add(startpoint);
+                            for(int l = 0; l < nextpoints.Count; l++)
+                            {
+                                Area.Add(nextpoints[l]);
+                            }
+                            PreAreas.Add(Area);
+                            break;
+                        }
+
+                        // 交点でも端点でもない点なら，次点リストに追加 一歩進む
+                        if(nextpoint.attribute == "other")
+                        {
+                            nextpoints.Add(nextpoint);
+                            nextcount = Mathf.Abs(nextcount) + 1;
+                            // Debug.Log(2);
+                        }
+                        // 交点を見つけたら，右折する(例外アリ)
+                        else if (nextpoint.attribute == "cross")
+                        {
+                            // すでに通った交点なら失敗
+                            bool breakflag = false;
+                            for(int l = 0; l < nextpoints.Count; l++)
+                            {
+                                if(nextpoint.coodi == nextpoints[l].coodi)
+                                {
+                                    breakflag = true;
+                                    break;
+                                }
+                            }
+                            if(breakflag == true)
+                            {
+                                break;
+                            }
+
+                            // 次点リストに追加
+                            nextpoints.Add(nextpoint);
+                            // 交点のペアのインデックスを探す
+                            IntPair crossIndex = SerchCrossPair(nextpoint, nextpointindex_i, nextpointindex_j + nextcount, vertex);
+                            // T字路やスクランブル交差点(無理)に対応したい
+                            // 次次点候補リスト作成(右 or まっすぐ or 左)
+                            List<VertexAttribute> nextpointFirstCandi = new List<VertexAttribute>();
+                            if(crossIndex.j + 1 < vertex[crossIndex.i].Count)
+                            {
+                                nextpointFirstCandi.Add(vertex[crossIndex.i][crossIndex.j + 1]);
+                            }
+                            if(crossIndex.j - 1 >= 0)
+                            {
+                                nextpointFirstCandi.Add(vertex[crossIndex.i][crossIndex.j - 1]);
+                            }
+                            if(nextpointindex_j + nextcount + nextnextcount < vertex[nextpointindex_i].Count)
+                            {
+                                nextpointFirstCandi.Add(vertex[nextpointindex_i][nextpointindex_j + nextcount + nextnextcount]);
+                            }
+
+                            // ファーストステージ
+                            bool area_flag = false;
+                            List<VertexAttribute> nextpointSecondCandi = new List<VertexAttribute>();
+                            // 各候補の次交点が始点なら領域検出，端点なら除外, 交点なら次のステージへ
+                            for (int l = 0; l < nextpointFirstCandi.Count; l++)
+                            {
+                                
+                                // vertex[crossIndex.i][crossIndex.j - 1] 以外は+1ずつ進める
+                                // vertex[crossIndex.i][crossIndex.j + 1] 方向
+                                if (crossIndex.j + 1 < vertex[crossIndex.i].Count)
+                                {
+                                    if (nextpointFirstCandi[l].coodi == vertex[crossIndex.i][crossIndex.j + 1].coodi)
+                                    {
+                                        
+                                        for (int p = 1; ; p++)
+                                        {
+                                            List<VertexAttribute> Prenextpoints = new List<VertexAttribute>();
+
+                                            // 始点なら領域検出(要脱出)
+                                            if (vertex[crossIndex.i][crossIndex.j + p].coodi == startpoint.coodi)
+                                            {
+                                                List<VertexAttribute> Area = new List<VertexAttribute>();
+                                                Area.Add(startpoint);
+                                                for (int u = 0; u < nextpoints.Count; u++)
+                                                {
+                                                    Area.Add(nextpoints[u]);
+                                                }
+                                                for (int u = 0; u < Prenextpoints.Count; u++)
+                                                {
+                                                    // 仮置きした分も入れなきゃね
+                                                    Area.Add(Prenextpoints[u]);
+                                                }
+                                                // Debug.Log(3);
+                                                area_flag = true;
+                                                PreAreas.Add(Area);
+                                                break;
+                                            }
+                                            // 普通の点なら，Prenextpointsに一旦保存
+                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "other")
+                                            {
+                                                Prenextpoints.Add(vertex[crossIndex.i][crossIndex.j + p]);
+                                            }
+                                            // 交点ならば、次のステージへ
+                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "cross")
+                                            {
+                                                nextpointSecondCandi.Add(vertex[crossIndex.i][crossIndex.j + 1]);
+                                                break;
+                                            }
+                                            
+                                        }
+                                    }
+                                }
+
+                                // vertex[crossIndex.i][crossIndex.j - 1] 方向(-1ずつすすむ)
+                                if (crossIndex.j - 1 >= 0)
+                                {
+                                    if (nextpointFirstCandi[l].coodi == vertex[crossIndex.i][crossIndex.j - 1].coodi)
+                                    {
+                                        
+                                        for (int p = -1; ; p--)
+                                        {
+                                            List<VertexAttribute> Prenextpoints = new List<VertexAttribute>();
+
+                                            // 始点なら領域検出
+                                            if (vertex[crossIndex.i][crossIndex.j + p].coodi == startpoint.coodi)
+                                            {
+                                                List<VertexAttribute> Area = new List<VertexAttribute>();
+                                                Area.Add(startpoint);
+                                                for (int u = 0; u < nextpoints.Count; u++)
+                                                {
+                                                    Area.Add(nextpoints[u]);
+                                                }
+                                                for (int u = 0; u < Prenextpoints.Count; u++)
+                                                {
+                                                    // 仮置きした分も入れなきゃね
+                                                    Area.Add(Prenextpoints[u]);
+                                                }
+                                                // Debug.Log(4);
+                                                area_flag = true;
+                                                PreAreas.Add(Area);
+                                                break;
+                                            }
+                                            // 普通の点なら，Prenextpointsに一旦保存
+                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "other")
+                                            {
+                                                Prenextpoints.Add(vertex[crossIndex.i][crossIndex.j + p]);
+                                            }
+                                            // 交点ならば、次のステージへ
+                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "cross")
+                                            {
+                                                nextpointSecondCandi.Add(vertex[crossIndex.i][crossIndex.j - 1]);
+                                                break;
+                                            }
+                                            
+                                        }
+                                    }
+                                }
+
+                                // vertex[i][j + k + 1] 方向
+                                if ((0 <= nextpointindex_j + nextcount + nextnextcount) && (nextpointindex_j + nextcount + nextnextcount < vertex[i].Count))
+                                {
+                                    if (nextpointFirstCandi[l].coodi == vertex[nextpointindex_i][nextpointindex_j + nextcount + nextnextcount].coodi)
+                                    {
+                                        int p = 1;
+                                        // Debug.Log(5);
+                                        for (; ; )
+                                        {
+                                            if(nextnextcount < 0)
+                                            {
+                                                p = Mathf.Abs(p) * -1;
+                                            }
+                                            List<VertexAttribute> Prenextpoints = new List<VertexAttribute>();
+
+                                            // 始点なら領域検出
+                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + p].coodi == startpoint.coodi)
+                                            {
+                                                List<VertexAttribute> Area = new List<VertexAttribute>();
+                                                Area.Add(startpoint);
+                                                for (int u = 0; u < nextpoints.Count; u++)
+                                                {
+                                                    Area.Add(nextpoints[u]);
+                                                }
+                                                for (int u = 0; u < Prenextpoints.Count; u++)
+                                                {
+                                                    // 仮置きした分も入れなきゃね
+                                                    Area.Add(Prenextpoints[u]);
+                                                }
+                                                //　Debug.Log(5);
+                                                area_flag = true;
+                                                PreAreas.Add(Area);
+                                                break;
+                                            }
+                                            // 普通の点なら，Prenextpointsに一旦保存
+                                            else if (vertex[nextpointindex_i][nextpointindex_j + nextcount + p].attribute == "other")
+                                            {
+                                                Prenextpoints.Add(vertex[crossIndex.i][crossIndex.j + p]);
+                                            }
+                                            // 交点ならば、次のステージへ
+                                            else if (vertex[nextpointindex_i][nextpointindex_j + nextcount + p].attribute == "cross")
+                                            {
+                                                nextpointSecondCandi.Add(vertex[crossIndex.i][crossIndex.j + 1]);
+                                                break;
+                                            }
+                                            
+                                            p = Mathf.Abs(p) + 1;
+                                        }
+                                    }
+                                }
+                                
+                            }
+
+                            // ファーストステージで領域検出に成功したら，始点を変える
+                            if(area_flag == true)
+                            {
+                                break;
+                            }
+
+                            // セカンドステージ
+                            VertexAttribute nextpointThirdCandi = null;
+                            // 候補が2つ以上あるなら，入り口方向ベクトルとの外積で勝負(小さいほうの勝ち)
+                            if (nextpointSecondCandi.Count >= 2)
+                            {
+                                // Debug.Log(6);
+                                // 入口方向ベクトル
+                                float x_start = vertex[nextpointindex_i][nextpointindex_j + nextcount].coodi.x - vertex[nextpointindex_i][nextpointindex_j + nextcount - nextnextcount].coodi.x;
+                                float y_start = vertex[nextpointindex_i][nextpointindex_j + nextcount].coodi.z - vertex[nextpointindex_i][nextpointindex_j + nextcount - nextnextcount].coodi.z;
+                                float length_start = Mathf.Sqrt(x_start * x_start + y_start * y_start);
+                                // 正規化
+                                Vector2 startVector = new Vector2(x_start / length_start, y_start / length_start);
+
+                                // 外積リスト
+                                List<float> Crosses = new List<float>();
+
+                                for(int l = 0; l < nextpointSecondCandi.Count; l++)
+                                {
+                                    // 候補ベクトル
+                                    float x_next = nextpointSecondCandi[l].coodi.x - vertex[nextpointindex_i][nextpointindex_j + nextcount].coodi.x;
+                                    float y_next = nextpointSecondCandi[l].coodi.z - vertex[nextpointindex_i][nextpointindex_j + nextcount].coodi.z;
+                                    float length_next = Mathf.Sqrt(x_next * x_next + y_next * y_next);
+                                    // 正規化
+                                    Vector2 nextVector = new Vector2(x_next / length_next, y_next / length_next);
+
+                                    // 外積
+                                    float cross = startVector.x * nextVector.y - startVector.y * nextVector.x;
+                                    Crosses.Add(cross);
+
+                                }
+
+                                // 外積の最小値を求めて，それに対応する候補が勝者
+                                float CrossMin = 0.0f;
+                                for(int l = 0; l < Crosses.Count; l++)
+                                {
+                                    if(l == 0)
+                                    {
+                                        CrossMin = Crosses[0];
+                                        nextpointThirdCandi = nextpointSecondCandi[0];
+                                    }
+                                    else
+                                    {
+                                        if(Crosses[l] < CrossMin)
+                                        {
+                                            CrossMin = Crosses[l];
+                                            nextpointThirdCandi = nextpointSecondCandi[l];
+                                        }
+                                    }
+                                }
+
+
+                            }
+
+                            // 候補が1つだけなら，勝者
+                            else if(nextpointSecondCandi.Count == 1)
+                            {
+                                // Debug.Log(7);
+                                nextpointThirdCandi = nextpointSecondCandi[0];
+                            }
+
+                            // 候補が1つもなかったら，失敗
+                            else
+                            {
+                                break;
+                            }
+
+                            // 勝者になった"方向"に進める
+                            bool false_flag = false;
+                            if (crossIndex.j + 1 < vertex[crossIndex.i].Count)
+                            {
+                                if (nextpointThirdCandi.coodi == vertex[crossIndex.i][crossIndex.j + 1].coodi) {
+                                    
+                                    for(int k = 1; ;k++)
+                                    {
+                                        // 進んだ先が端点ならば失敗
+                                        if (vertex[crossIndex.i][crossIndex.j + k].attribute == "ep")
+                                        {
+                                            false_flag = true;
+                                            break;
+                                        }
+                                    }
+                                    if(false_flag == true)
+                                    {
+                                        break;
+                                    }
+
+                                    nextpointindex_i = crossIndex.i;
+                                    nextpointindex_j = crossIndex.j;
+                                    nextcount = 1;
+                                    minusflag = false;
+                                }
+
+                            }
+                            // j - 1のときだけ，次からマイナスをたどる
+                            if (crossIndex.j - 1 >= 0)
+                            {
+                                if (nextpointThirdCandi.coodi == vertex[crossIndex.i][crossIndex.j - 1].coodi)
+                                {
+                                    for (int k = -1; ; k--)
+                                    {
+                                        // 進んだ先が端点ならば失敗
+                                        if (vertex[crossIndex.i][crossIndex.j + k].attribute == "ep")
+                                        {
+                                            false_flag = true;
+                                            break;
+                                        }
+                                    }
+                                    if (false_flag == true)
+                                    {
+                                        break;
+                                    }
+
+                                    nextpointindex_i = crossIndex.i;
+                                    nextpointindex_j = crossIndex.j;
+                                    nextcount = -1;
+                                    minusflag = true;
+                                }
+
+                            }
+                            if ((0 <= nextpointindex_j + nextcount + nextnextcount) && (nextpointindex_j + nextcount + nextnextcount < vertex[nextpointindex_i].Count))
+                            {
+
+                                if (nextpointThirdCandi.coodi == vertex[nextpointindex_i][nextpointindex_j + nextcount + nextnextcount].coodi)
+                                {
+
+                                    if (nextcount < 0)
+                                    {
+                                        for (int k = -1; ; k++)
+                                        {
+                                            // 進んだ先が端点ならば失敗
+                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "ep")
+                                            {
+                                                false_flag = true;
+                                                break;
+                                            }
+                                        }
+                                        if (false_flag == true)
+                                        {
+                                            break;
+                                        }
+
+                                        minusflag = true;
+                                    }
+                                    else
+                                    {
+                                        for (int k = 1; ; k++)
+                                        {
+                                            // 進んだ先が端点ならば失敗
+                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "ep")
+                                            {
+                                                false_flag = true;
+                                                break;
+                                            }
+                                        }
+                                        if (false_flag == true)
+                                        {
+                                            break;
+                                        }
+                                        minusflag = false;
+                                    }
+
+                                    nextpointindex_i = nextpointindex_i;
+                                    nextpointindex_j = nextpointindex_j + nextcount + nextnextcount;
+                                    nextcount = 1;
+                                }
+
+                            }
+
+                        }
+                        // 進めていって，端点にたどり着いたら，始点を変える
+                        else if(nextpoint.attribute == "ep")
+                        {
+                            // Debug.Log(11);
+                            break;
+                        }
+                        
+                    }
+
+                }
+
+            }
+        }
+
+
+        /*
         for(int i = 0; i < vertex.Count; i++)
         {
             for(int j = 0; j < vertex[i].Count; j++)
@@ -744,33 +1147,20 @@ public class CityCreate : MonoBehaviour
                         {
                             nextpoints.Add(nextpoint);
                             IntPair crossIndex = SerchCrossPair(nextpoint, a, b, vertex);                            
-<<<<<<< HEAD
                             // Debug.Log("Pair : ("  + a + ", " + b + ") : (" + crossIndex.i + ", " + crossIndex.j + ")");
                             // Debug.Log(vertex[a][b].coodi);
                             // Debug.Log(nextpoint.coodi);
                             // Debug.Log(vertex[crossIndex.i][crossIndex.j].coodi);
-=======
-                            Debug.Log("Pair : ("  + a + ", " + b + ") : (" + crossIndex.i + ", " + crossIndex.j + ")");
-                            Debug.Log(vertex[a][b].coodi);
-                            Debug.Log(nextpoint.coodi);
-                            Debug.Log(vertex[crossIndex.i][crossIndex.j].coodi);
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
                             // 次々点探索
                             // 右に行くか([crossIndex.i][crossIndex.j + 1])左に行くか([crossIndex.i][crossIndex.j - 1])まっすぐ行くか([a][b + 1])判定
 
-                            // 次々点が始点なら最優先で
-<<<<<<< HEAD
+                            
                             // Debug.Log(crossIndex.i + "  " + (crossIndex.j + 1));
                             // Debug.Log(crossIndex.i + "  " + (crossIndex.j - 1));
                             // Debug.Log(a + "  " + (b + c));
                             // Debug.Log("----------");
-=======
-                            Debug.Log(crossIndex.i + "  " + (crossIndex.j + 1));
-                            Debug.Log(crossIndex.i + "  " + (crossIndex.j - 1));
-                            Debug.Log(a + "  " + (b + c));
-                            Debug.Log("----------");
->>>>>>> 3681153b3d978373f73e1c292153a1d1bdae2769
 
+                            // 次々点が始点なら最優先で
                             if (vertex[crossIndex.i][crossIndex.j + 1].coodi == startpoint.coodi || vertex[crossIndex.i][crossIndex.j - 1].coodi == startpoint.coodi || vertex[a][b + c].coodi == startpoint.coodi)
                             {
                                 List <VertexAttribute> Aria = new List<VertexAttribute>();
@@ -780,7 +1170,7 @@ public class CityCreate : MonoBehaviour
                                     Aria.Add(nextpoints[l]);
                                 }
 
-                                Arias.Add(Aria);
+                                PreAreas.Add(Aria);
                                 break;
                             }
 
@@ -894,7 +1284,87 @@ public class CityCreate : MonoBehaviour
             }
         }
 
-        return Arias;
+        */
+        // 被ってるエリアを消す
+        Debug.Log("PreAreaCount" + PreAreas.Count);
+        List<Vector3> PreCenters = new List<Vector3>();
+        for (int i = 0; i < PreAreas.Count; i++)
+        {
+            float center_x = 0;
+            float center_z = 0;
+            int n = 0;
+            for (int j = 0; j < PreAreas[i].Count; j++)
+            {
+                center_x += PreAreas[i][j].coodi.x;
+                center_z += PreAreas[i][j].coodi.z;
+                n++;
+            }
+            Vector3 Center = new Vector3(center_x / n, 9.0f, center_z / n);
+            PreCenters.Add(Center);
+        }
+
+        List<List<VertexAttribute>> Areas = new List<List<VertexAttribute>>();
+
+        List<Vector3> Centers = new List<Vector3>();
+        for (int i = 0; i < PreAreas.Count; i++)
+        {
+            if (i == 0)
+            {
+                Areas.Add(PreAreas[i]);
+                Centers.Add(PreCenters[i]);
+            }
+            else
+            {
+                bool add_flag = true;
+                for (int j = 0; j < Centers.Count; j++)
+                {
+                    if (Mathf.Floor(PreCenters[i].x * 100) / 100 == Mathf.Floor(Centers[j].x * 100) / 100 && Mathf.Floor(PreCenters[i].z * 100) / 100 == Mathf.Floor(Centers[j].z * 100) / 100)
+                    {
+                        add_flag = false;
+                        break;                        
+                    }
+
+                }
+                if (add_flag == true)
+                {
+                    Areas.Add(PreAreas[i]);
+                    Centers.Add(PreCenters[i]);
+                }
+            }
+        }
+
+        for (int i = 0; i < Centers.Count; i++)
+        {
+            GameObject AreaCenter = Instantiate(CrossObj, Centers[i], Quaternion.identity);            
+        }
+
+        for(int i = 0; i < Areas.Count; i++)
+        {
+            for(int j = 0; j < Areas[i].Count; j++)
+            {
+                Debug.Log("Area" + Areas[i][j].coodi);
+            }
+            Debug.Log("-------");
+        }
+        /*
+        Debug.Log("AreaCount" + Areas.Count);
+        for(int i= 0;i < Areas[0].Count; i++)
+        {
+            Debug.Log("AreaCount[0]" + Areas[0][i].coodi);
+        }
+        for (int i = 0; i < Areas[1].Count; i++)
+        {
+            Debug.Log("AreaCount[1]" + Areas[1][i].coodi);
+        }
+        for (int i = 0; i < Areas[2].Count; i++)
+        {
+            Debug.Log("AreaCount[2]" + Areas[2][i].coodi);
+        }
+         
+         */
+        
+
+        return Areas;
     }
 
     IntPair SerchCrossPair(VertexAttribute cross, int index_i, int index_j, List<List<VertexAttribute>> vertexList)
