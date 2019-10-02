@@ -675,6 +675,30 @@ public class CityCreate : MonoBehaviour
                         }
                     }
 
+                    // 進む方向の確認
+                    if(startPair.j + 1 < vertex[startPair.i].Count)
+                    {
+                        if(courseSecondCandi.coodi == vertex[startPair.i][startPair.j + 1].coodi)
+                        {
+                            nextpointindex_i = startPair.i;
+                            nextpointindex_j = startPair.j + 1;
+                        }
+                    }
+
+                    if(0 <= startPair.j - 1)
+                    {
+                        if(courseSecondCandi.coodi == vertex[startPair.i][startPair.j - 1].coodi)
+                        {
+                            nextpointindex_i = startPair.i;
+                            nextpointindex_j = startPair.j - 1;
+                            minusflag = true;
+                        }
+                    }
+
+                    if(j + 1 < vertex[i].Count)
+                    {
+                        // ここから！！
+                    }
 
                     // 隣接する交点を探す
                     for (; ; )
