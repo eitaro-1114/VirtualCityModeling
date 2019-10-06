@@ -629,7 +629,7 @@ public class CityCreate : MonoBehaviour
                     int nextnextcount = 1;
                     bool minusflag = false;
 
-                    // 始点が交点にだったら，たどる方向を決める(必ず右側)
+                    // 始点が交点にだったら，たどる方向を決める(必ず+X側)
                     IntPair startPair = SerchCrossPair(startpoint, i, j, vertex);
                     List<VertexAttribute> courseFirstCandi = new List<VertexAttribute>();
                     if(startPair.j + 1 < vertex[startPair.i].Count)
@@ -644,33 +644,36 @@ public class CityCreate : MonoBehaviour
                     {
                         courseFirstCandi.Add(vertex[i][j + 1]);
                     }
+                    if(j - 1 >= 0)
+                    {
+                        courseFirstCandi.Add(vertex[i][j - 1]);
+                    }
 
                     VertexAttribute courseSecondCandi = null;
-                    // 外積の最小を選択
-                    // 最小外積
-                    float coursecrossMin = 0.0f;
+
+                    // (1.0, 0.0)との最大内積
+                    float coursedotMax = 0.0f;
                     // 基点ベクトル
-                    float base_length = Mathf.Sqrt(vertex[i][j].coodi.x * vertex[i][j].coodi.x + vertex[i][j].coodi.z * vertex[i][j].coodi.z);
-                    Vector2 base_vector = new Vector2(vertex[i][j].coodi.x / base_length, vertex[i][j].coodi.z / base_length);
+                    Vector2 baseVector = new Vector2(1.0f, 0.0f);
 
                     for(int k = 0; k < courseFirstCandi.Count; k++)
                     {
                         float course_x = courseFirstCandi[k].coodi.x - vertex[i][j].coodi.x;
                         float course_y = courseFirstCandi[k].coodi.z - vertex[i][j].coodi.z;
                         float course_length = Mathf.Sqrt(course_x * course_x + course_y * course_y);
-                        Vector2 course_vector = new Vector2(course_x / course_length, course_y / course_length);
+                        Vector2 courseVector = new Vector2(course_x / course_length, course_y / course_length);
 
-                        // 外積
-                        float coursecross = base_vector.x * course_vector.y - base_vector.y * course_vector.x;
+                        // 内積
+                        float coursedot = baseVector.x * courseVector.x + baseVector.y * courseVector.y;
 
                         if (k == 0)
                         {
-                            coursecrossMin = coursecross;
+                            coursedotMax = coursedot;
                             courseSecondCandi = courseFirstCandi[k];
                         }
-                        else if(coursecross < coursecrossMin)
+                        else if(coursedot > coursedotMax)
                         {
-                            coursecrossMin = coursecross;
+                            coursedotMax = coursedot;
                             courseSecondCandi = courseFirstCandi[k];
                         }
                     }
@@ -681,7 +684,7 @@ public class CityCreate : MonoBehaviour
                         if(courseSecondCandi.coodi == vertex[startPair.i][startPair.j + 1].coodi)
                         {
                             nextpointindex_i = startPair.i;
-                            nextpointindex_j = startPair.j + 1;
+                            nextpointindex_j = startPair.j;
                         }
                     }
 
@@ -690,14 +693,28 @@ public class CityCreate : MonoBehaviour
                         if(courseSecondCandi.coodi == vertex[startPair.i][startPair.j - 1].coodi)
                         {
                             nextpointindex_i = startPair.i;
-                            nextpointindex_j = startPair.j - 1;
+                            nextpointindex_j = startPair.j;
                             minusflag = true;
                         }
                     }
 
                     if(j + 1 < vertex[i].Count)
                     {
-                        // ここから！！
+                        if(courseSecondCandi.coodi == vertex[i][j + 1].coodi)
+                        {
+                            nextpointindex_i = i;
+                            nextpointindex_j = j;
+                        }
+                    }
+
+                    if(0 <= j - 1)
+                    {
+                        if(courseSecondCandi.coodi == vertex[i][j - 1].coodi)
+                        {
+                            nextpointindex_i = i;
+                            nextpointindex_j = j;
+                            minusflag = true;
+                        }
                     }
 
                     // 隣接する交点を探す
@@ -792,7 +809,7 @@ public class CityCreate : MonoBehaviour
                                     if (nextpointFirstCandi[l].coodi == vertex[crossIndex.i][crossIndex.j + 1].coodi)
                                     {
                                         
-                                        for (int p = 1; ; p++)
+                                        for (int p = 1; crossIndex.j + p < vertex[crossIndex.i].Count; p++)
                                         {
                                             List<VertexAttribute> Prenextpoints = new List<VertexAttribute>();
 
@@ -821,7 +838,7 @@ public class CityCreate : MonoBehaviour
                                                 Prenextpoints.Add(vertex[crossIndex.i][crossIndex.j + p]);
                                             }
                                             // 交点ならば、次のステージへ
-                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "cross")
+                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "cross" || vertex[crossIndex.i][crossIndex.j + p].attribute == "ep")
                                             {
                                                 nextpointSecondCandi.Add(vertex[crossIndex.i][crossIndex.j + 1]);
                                                 break;
@@ -837,11 +854,12 @@ public class CityCreate : MonoBehaviour
                                     if (nextpointFirstCandi[l].coodi == vertex[crossIndex.i][crossIndex.j - 1].coodi)
                                     {
                                         
-                                        for (int p = -1; ; p--)
+                                        for (int p = -1; crossIndex.j + p >= 0; p--)
                                         {
                                             List<VertexAttribute> Prenextpoints = new List<VertexAttribute>();
 
                                             // 始点なら領域検出
+                                            // Debug.Log("crossIndex.j + p : " + crossIndex.j + p);
                                             if (vertex[crossIndex.i][crossIndex.j + p].coodi == startpoint.coodi)
                                             {
                                                 List<VertexAttribute> Area = new List<VertexAttribute>();
@@ -866,7 +884,7 @@ public class CityCreate : MonoBehaviour
                                                 Prenextpoints.Add(vertex[crossIndex.i][crossIndex.j + p]);
                                             }
                                             // 交点ならば、次のステージへ
-                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "cross")
+                                            else if (vertex[crossIndex.i][crossIndex.j + p].attribute == "cross" || vertex[crossIndex.i][crossIndex.j + p].attribute == "ep")
                                             {
                                                 nextpointSecondCandi.Add(vertex[crossIndex.i][crossIndex.j - 1]);
                                                 break;
@@ -916,7 +934,7 @@ public class CityCreate : MonoBehaviour
                                                 Prenextpoints.Add(vertex[crossIndex.i][crossIndex.j + p]);
                                             }
                                             // 交点ならば、次のステージへ
-                                            else if (vertex[nextpointindex_i][nextpointindex_j + nextcount + p].attribute == "cross")
+                                            else if (vertex[nextpointindex_i][nextpointindex_j + nextcount + p].attribute == "cross" || vertex[nextpointindex_i][nextpointindex_j + nextcount + p].attribute == "ep")
                                             {
                                                 nextpointSecondCandi.Add(vertex[crossIndex.i][crossIndex.j + 1]);
                                                 break;
@@ -1001,6 +1019,12 @@ public class CityCreate : MonoBehaviour
                                 break;
                             }
 
+                            // 勝者が端点なら失敗
+                            if(nextpointThirdCandi.attribute == "ep")
+                            {
+                                break;
+                            }
+
                             // 勝者になった"方向"に進める
                             bool false_flag = false;
                             if (crossIndex.j + 1 < vertex[crossIndex.i].Count)
@@ -1010,7 +1034,11 @@ public class CityCreate : MonoBehaviour
                                     for(int k = 1; ;k++)
                                     {
                                         // 進んだ先が端点ならば失敗
-                                        if (vertex[crossIndex.i][crossIndex.j + k].attribute == "ep")
+                                        if (vertex[crossIndex.i][crossIndex.j + k].attribute == "cross")
+                                        {                                            
+                                            break;
+                                        }
+                                        else if(vertex[crossIndex.i][crossIndex.j + k].attribute == "ep")
                                         {
                                             false_flag = true;
                                             break;
@@ -1036,12 +1064,17 @@ public class CityCreate : MonoBehaviour
                                     for (int k = -1; ; k--)
                                     {
                                         // 進んだ先が端点ならば失敗
-                                        if (vertex[crossIndex.i][crossIndex.j + k].attribute == "ep")
+                                        if (vertex[crossIndex.i][crossIndex.j + k].attribute == "cross")
+                                        {
+                                            break;
+                                        }
+                                        else if (vertex[crossIndex.i][crossIndex.j + k].attribute == "ep")
                                         {
                                             false_flag = true;
                                             break;
                                         }
                                     }
+
                                     if (false_flag == true)
                                     {
                                         break;
@@ -1065,12 +1098,17 @@ public class CityCreate : MonoBehaviour
                                         for (int k = -1; ; k++)
                                         {
                                             // 進んだ先が端点ならば失敗
-                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "ep")
+                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "cross")
+                                            {
+                                                break;
+                                            }
+                                            else if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "ep")
                                             {
                                                 false_flag = true;
                                                 break;
                                             }
                                         }
+
                                         if (false_flag == true)
                                         {
                                             break;
@@ -1083,7 +1121,11 @@ public class CityCreate : MonoBehaviour
                                         for (int k = 1; ; k++)
                                         {
                                             // 進んだ先が端点ならば失敗
-                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "ep")
+                                            if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "cross")
+                                            {
+                                                break;
+                                            }
+                                            else if (vertex[nextpointindex_i][nextpointindex_j + nextcount + k].attribute == "ep")
                                             {
                                                 false_flag = true;
                                                 break;
@@ -1357,18 +1399,31 @@ public class CityCreate : MonoBehaviour
             }
         }
 
+        /*
         for (int i = 0; i < Centers.Count; i++)
         {
             GameObject AreaCenter = Instantiate(CrossObj, Centers[i], Quaternion.identity);            
         }
+         */
 
-        for(int i = 0; i < Areas.Count; i++)
+        for (int i = 0; i < Areas.Count; i++)
         {
-            for(int j = 0; j < Areas[i].Count; j++)
+            GameObject AriaLine = new GameObject();
+            AriaLine.AddComponent<LineRenderer>();
+
+            LineRenderer aria_line = AriaLine.GetComponent<LineRenderer>();
+            
+            aria_line.startWidth = 5.0f;
+            aria_line.endWidth = 5.0f;
+            aria_line.positionCount = Areas[i].Count + 1;
+            for (int j = 0; j < Areas[i].Count; j++)
             {
-                Debug.Log("Area" + Areas[i][j].coodi);
+                aria_line.SetPosition(j, Areas[i][j].coodi);
             }
-            Debug.Log("-------");
+            aria_line.SetPosition(Areas[i].Count, Areas[i][0].coodi);
+            Color LineColor = new Color(Random.value, Random.value, Random.value);
+            aria_line.startColor = LineColor;
+            aria_line.endColor = LineColor;
         }
         /*
         Debug.Log("AreaCount" + Areas.Count);
