@@ -53,6 +53,13 @@ public class CrossPropaty
         this.SegmentIndex = SegmentIndex;
         this.CrossCoordinate = Cross;
     }
+
+    public static float distanceCompare(CrossPropaty a, CrossPropaty b, Vector3 target)
+    {
+        float a_distance = Mathf.Sqrt((target.x - a.CrossCoordinate.x) * (target.x - a.CrossCoordinate.x) + (target.z - a.CrossCoordinate.z) * (target.z - a.CrossCoordinate.z));
+        float b_distance = Mathf.Sqrt((target.x - b.CrossCoordinate.x) * (target.x - b.CrossCoordinate.x) + (target.z - b.CrossCoordinate.z) * (target.z - b.CrossCoordinate.z));
+        return a_distance.CompareTo(b_distance);
+    }
 }
 
 public class VertexAttribute
@@ -319,32 +326,71 @@ public class CityCreate : MonoBehaviour
                 BuildGenerate(i);
             }
             */
-            
 
             // 交点リストのソート
+            // ここバグ
             CrossPropaties.Sort((a, b) => a.CurveIndex - b.CurveIndex);
+            List<CrossPropaty> CrossPropatySortList = new List<CrossPropaty>();
+            List<List<CrossPropaty>> CrossPropatiesSortList = new List<List<CrossPropaty>>();
+
             for (int i = 0; i < CrossPropaties.Count - 1; i++)
             {
-                if(CrossPropaties[i].CurveIndex == CrossPropaties[i + 1].CurveIndex)
-                {
-                    Vector3 target_point = Lines[CrossPropaties[i].CurveIndex][CrossPropaties[i].SegmentIndex - 1];
-                    float distance01 = Mathf.Sqrt((target_point.x - CrossPropaties[i].CrossCoordinate.x) * (target_point.x - CrossPropaties[i].CrossCoordinate.x) + (target_point.z - CrossPropaties[i].CrossCoordinate.z) * (target_point.z - CrossPropaties[i].CrossCoordinate.z));
-                    float distance02 = Mathf.Sqrt((target_point.x - CrossPropaties[i + 1].CrossCoordinate.x) * (target_point.x - CrossPropaties[i + 1].CrossCoordinate.x) + (target_point.z - CrossPropaties[i + 1].CrossCoordinate.z) * (target_point.z - CrossPropaties[i + 1].CrossCoordinate.z));
 
-                    if(distance01 >= distance02)
+                if((CrossPropaties[i].CurveIndex == CrossPropaties[i + 1].CurveIndex) && (CrossPropaties[i].SegmentIndex == CrossPropaties[i + 1].SegmentIndex))
+                {
+                    CrossPropatySortList.Add(CrossPropaties[i]);
+                    // 最後の処理だったら
+                    if(i + 1 == CrossPropaties.Count - 1)
                     {
-                        // 2要素の順番を入れ替える(i番目の要素とi+1番目の要素)
-                        // i番目の要素を保存
-                        CrossPropaty I = CrossPropaties[i];
-                        // i番目の要素を消す
-                        CrossPropaties.RemoveAt(i);
-                        // b番目の要素の後にAを追加
-                        CrossPropaties.Insert(i + 1, I);
-                        // Debug.Log("!!");
-                        
+                        CrossPropatySortList.Add(CrossPropaties[i + 1]);
+                        CrossPropatiesSortList.Add(CrossPropatySortList);
                     }
                 }
+                else
+                {
+                    CrossPropatySortList.Add(CrossPropaties[i]);
+                    List<CrossPropaty> CrossPropatySortListBuffer = new List<CrossPropaty>(CrossPropatySortList);
+                    CrossPropatiesSortList.Add(CrossPropatySortListBuffer);
+                    CrossPropatySortList.Clear();
+
+                    // 最後の処理だったら
+                    if(i + 1 == CrossPropaties.Count - 1)
+                    {
+                        CrossPropatySortList.Add(CrossPropaties[i + 1]);
+                        CrossPropatiesSortList.Add(CrossPropatySortList);
+                    }
+                }
+
             }
+
+            for(int i = 0; i < CrossPropatiesSortList.Count; i++)
+            {
+                Vector3 targetpoint;
+                if(CrossPropatiesSortList[i][0].SegmentIndex == 0)
+                {
+                    targetpoint = Lines[CrossPropatiesSortList[i][0].CurveIndex][CrossPropatiesSortList[i][0].SegmentIndex];
+                }
+                else
+                {
+                    targetpoint = Lines[CrossPropatiesSortList[i][0].CurveIndex][CrossPropatiesSortList[i][0].SegmentIndex - 1];
+                }
+
+                CrossPropatiesSortList[i].Sort((a, b) => ((int) Mathf.Sqrt((targetpoint.x - a.CrossCoordinate.x) * (targetpoint.x - a.CrossCoordinate.x) + (targetpoint.z - a.CrossCoordinate.z) * (targetpoint.z - a.CrossCoordinate.z)))
+                                                       - ((int) Mathf.Sqrt((targetpoint.x - b.CrossCoordinate.x) * (targetpoint.x - b.CrossCoordinate.x) + (targetpoint.z - b.CrossCoordinate.z) * (targetpoint.z - b.CrossCoordinate.z))));
+
+            }
+            // ここまでやった
+            //for (int i = 0; i < CrossPropatiesSortList.Count; i++)
+            //{
+            //    for (int j = 0; j < CrossPropatiesSortList[i].Count; j++)
+            //    {
+            //        Debug.Log("Lines = " + CrossPropatiesSortList[i][j].CurveIndex + " , Segments = " + CrossPropatiesSortList[i][j].SegmentIndex + " , Coodi = " + CrossPropatiesSortList[i][j].CrossCoordinate);
+
+            //    }
+
+            //    Debug.Log("----------------");
+            //}
+
 
             // 交点リストと線分リストに属性を持たせる            
             List<List<VertexAttribute>> LinesAttribute = new List<List<VertexAttribute>>();
@@ -372,10 +418,15 @@ public class CityCreate : MonoBehaviour
             }
 
             // 交点リストに属性を持たせる 
-            for(int i = 0; i < CrossPropaties.Count; i++)
+            for (int i = 0; i < CrossPropatiesSortList.Count; i++)
             {
-                CrossAttribute.Add(new VertexAttribute("cross", CrossPropaties[i].CrossCoordinate));
+                for (int j = 0; j < CrossPropatiesSortList[i].Count; j++)
+                {
+                    CrossAttribute.Add(new VertexAttribute("cross", CrossPropatiesSortList[i][j].CrossCoordinate));
+                }
+
             }
+
 
             // 交点を頂点として含めた線分の頂点リストをつくっちゃおう
             // できたああ
@@ -409,7 +460,6 @@ public class CityCreate : MonoBehaviour
                     Vertex_and_Intersection.Add(LinesAttribute[i][j]);
 
                 }
-                    
 
                 Vertex_and_Intersections.Add(Vertex_and_Intersection);
             }
@@ -418,7 +468,7 @@ public class CityCreate : MonoBehaviour
             {
                 for (int j = 0; j < Vertex_and_Intersections[i].Count; j++)
                 {
-                    // Debug.Log("i = " + i + "  j = " + j + "  " +  Vertex_and_Intersections[i][j].coodi + "  attribute = " + Vertex_and_Intersections[i][j].attribute);
+                   // Debug.Log("i = " + i + "  j = " + j + "  " +  Vertex_and_Intersections[i][j].coodi + "  attribute = " + Vertex_and_Intersections[i][j].attribute);
                 }
             }
 
@@ -631,6 +681,7 @@ public class CityCreate : MonoBehaviour
 
                     // 始点が交点にだったら，たどる方向を決める(必ず+X側)
                     IntPair startPair = SerchCrossPair(startpoint, i, j, vertex);
+
                     List<VertexAttribute> courseFirstCandi = new List<VertexAttribute>();
                     if(startPair.j + 1 < vertex[startPair.i].Count)
                     {
@@ -1399,32 +1450,32 @@ public class CityCreate : MonoBehaviour
             }
         }
 
-        /*
+
         for (int i = 0; i < Centers.Count; i++)
         {
             GameObject AreaCenter = Instantiate(CrossObj, Centers[i], Quaternion.identity);            
         }
-         */
 
-        for (int i = 0; i < Areas.Count; i++)
-        {
-            GameObject AriaLine = new GameObject();
-            AriaLine.AddComponent<LineRenderer>();
 
-            LineRenderer aria_line = AriaLine.GetComponent<LineRenderer>();
+        //for (int i = 0; i < Areas.Count; i++)
+        //{
+        //    GameObject AriaLine = new GameObject();
+        //    AriaLine.AddComponent<LineRenderer>();
+
+        //    LineRenderer aria_line = AriaLine.GetComponent<LineRenderer>();
             
-            aria_line.startWidth = 5.0f;
-            aria_line.endWidth = 5.0f;
-            aria_line.positionCount = Areas[i].Count + 1;
-            for (int j = 0; j < Areas[i].Count; j++)
-            {
-                aria_line.SetPosition(j, Areas[i][j].coodi);
-            }
-            aria_line.SetPosition(Areas[i].Count, Areas[i][0].coodi);
-            Color LineColor = new Color(Random.value, Random.value, Random.value);
-            aria_line.startColor = LineColor;
-            aria_line.endColor = LineColor;
-        }
+        //    aria_line.startWidth = 5.0f;
+        //    aria_line.endWidth = 5.0f;
+        //    aria_line.positionCount = Areas[i].Count + 1;
+        //    for (int j = 0; j < Areas[i].Count; j++)
+        //    {
+        //        aria_line.SetPosition(j, Areas[i][j].coodi);
+        //    }
+        //    aria_line.SetPosition(Areas[i].Count, Areas[i][0].coodi);
+        //    Color LineColor = new Color(Random.value, Random.value, Random.value);
+        //    aria_line.startColor = LineColor;
+        //    aria_line.endColor = LineColor;
+        //}
         /*
         Debug.Log("AreaCount" + Areas.Count);
         for(int i= 0;i < Areas[0].Count; i++)
