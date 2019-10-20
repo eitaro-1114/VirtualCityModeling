@@ -121,6 +121,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 100720433}
+  - component: {fileID: 100720434}
+  - component: {fileID: 100720435}
   - component: {fileID: 100720432}
   - component: {fileID: 100720431}
   m_Layer: 0
@@ -146,13 +148,15 @@ MonoBehaviour:
     type: 3}
   ParentObj: {fileID: 3990428792599670397, guid: 20c8bdefd873cc84fb8a5a54d82d421e,
     type: 3}
-  LineMaterial: {fileID: 0}
+  LineMaterial: {fileID: 2100000, guid: f7b7188412055ae48989413875d67222, type: 2}
   LineColor: {r: 1, g: 1, b: 1, a: 0}
   lineWidth: 30
   Build: {fileID: 7819773314308674399, guid: 0778ea8c3b3815842bf887081fcd34ee, type: 3}
   Buildings: {fileID: 3990428792599670397, guid: 20c8bdefd873cc84fb8a5a54d82d421e,
     type: 3}
   buildGenerateCount: 2000
+  AreaObject: {fileID: 9217646856034975844, guid: 3aec02f9489296948a4abb2ba4795f74,
+    type: 3}
   StraightRenderer: {fileID: 4311033626688535364, guid: a97fe6581c98d5845b3c90a2865b0c95,
     type: 3}
   build_flag: 0
@@ -188,6 +192,51 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &100720434
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100720430}
+  m_Mesh: {fileID: 0}
+--- !u!23 &100720435
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100720430}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
 --- !u!1 &170076733
 GameObject:
   m_ObjectHideFlags: 0
