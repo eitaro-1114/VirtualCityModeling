@@ -63,6 +63,8 @@
     <Compile Include="Assets\Script\Build_Hit.cs" />
     <Compile Include="Assets\Script\CityCreate.cs" />
     <Compile Include="Assets\Script\Cross.cs" />
+    <Compile Include="Assets\Script\Line.cs" />
+    <Compile Include="Assets\Script\Polygon.cs" />
     <Compile Include="Assets\Script\SceneViewCamera.cs" />
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>C:/Users/mahum/Documents/GitHub/VirtualCityModeling/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>

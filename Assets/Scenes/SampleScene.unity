@@ -157,6 +157,7 @@ MonoBehaviour:
   buildGenerateCount: 2000
   AreaObject: {fileID: 9217646856034975844, guid: 3aec02f9489296948a4abb2ba4795f74,
     type: 3}
+  AreaMaterial: {fileID: 0}
   StraightRenderer: {fileID: 4311033626688535364, guid: a97fe6581c98d5845b3c90a2865b0c95,
     type: 3}
   build_flag: 0
@@ -594,7 +595,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &1582706600
 SpriteRenderer:
   m_ObjectHideFlags: 0
