@@ -116,12 +116,22 @@ public class LineSegment
         return t1 * t2 <= 0;
     }
 
-    // 交差判定(線分)
+    // 交差判定(線分) つながっていたらfalse
     public bool Intersects(LineSegment s)
     {
+        Vector2 thisSegmentA = new Vector2(x1, y1);
+        Vector2 thisSegmentB = new Vector2(x2, y2);
+
+        Vector2 otherSegmentA = new Vector2(s.x1, s.y1);
+        Vector2 otherSegmentB = new Vector2(s.x2, s.y2);
+
+        //if (thisSegmentA == otherSegmentA || thisSegmentA == otherSegmentB || thisSegmentB == otherSegmentA || thisSegmentB == otherSegmentB)
+        //{
+        //    return false;
+        //}
         return Intersects(s.ToLine()) && s.Intersects(ToLine());
-        Debug.Log(BothSides(s) && BothSides(this));
-        return BothSides(s) && BothSides(this);
+        // Debug.Log(BothSides(s) && BothSides(this));
+        // eturn BothSides(s) && BothSides(this);
     }
 
     // sが自分の線分の両側にあるかを調べる

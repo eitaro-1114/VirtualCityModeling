@@ -64,7 +64,6 @@ public class CrossPropaty
 
 public class VertexAttribute
 {
-
     public string attribute;    // 端点 or 交点 or それ以外
     public Vector3 coodi;       // 座標
 
@@ -76,6 +75,86 @@ public class VertexAttribute
 
 }
 
+public class Area
+{
+    public Vector3 pos { get; set; }
+    public List<Vertex> vertices { get; set; }
+
+    public override string ToString()
+        => $"{pos} : {vertices}";
+
+    public void DrawArea(Color c)
+    {
+        for(int i = 0; i < vertices.Count; i++)
+        {
+            Debug.DrawLine(vertices[i].coordinate, vertices[(i + 1) % vertices.Count].coordinate, c, 100000f);
+        }
+    }
+
+    // 左端の点Bの前の点をA、後ろの点をCとして、
+    // 点CがABの右にある時、ループが時計回りである
+    public void CCWSort()
+    {
+        Vector3 leftInfinity = new Vector3(float.PositiveInfinity, 0f, 0f);
+        Vertex VertexB = null;
+
+        // 左端の点を見つける
+        foreach(Vertex v in vertices)
+        {
+            // 左側にあるか、x座標が同じで下側にあるか
+            if((v.coordinate.x < leftInfinity.x) || (v.coordinate.x == leftInfinity.x && v.coordinate.z < leftInfinity.z))
+            {
+                leftInfinity = v.coordinate;
+                VertexB = v;
+            }
+        }
+        if (VertexB == null) throw new System.Exception("閉領域がないぞ");
+
+        // 前後の点A、Cを求める
+        int index = vertices.IndexOf(VertexB);
+        Vertex VertexA = vertices[(vertices.Count + index + 1) % vertices.Count];
+        Vertex VertexC = vertices[(vertices.Count + index - 1) % vertices.Count];
+
+        // CAとCBの外積が正ならば、ループが時計回り
+        Vector2 CA = new Vector2(VertexA.coordinate.x - VertexC.coordinate.x, VertexA.coordinate.z - VertexC.coordinate.z);
+        Vector2 CB = new Vector2(VertexB.coordinate.x - VertexC.coordinate.x, VertexB.coordinate.z - VertexC.coordinate.z);
+        float cross = CA.x * CB.y - CB.x * CA.y;
+        if(cross > 0)
+        {
+            vertices.Reverse();
+        }
+    }
+
+    // Polygonクラスへ変換
+    public Polygon ConvertToPolygon()
+    {
+        // Vector2に変換
+        List<Vector2> list = new List<Vector2>();
+        foreach(Vertex v in vertices)
+        {
+            list.Add(new Vector2(v.coordinate.x, v.coordinate.z));
+        }
+
+        return new Polygon(list);
+    }
+
+    public override int GetHashCode()
+        => pos.GetHashCode() ^ vertices.GetHashCode();
+}
+
+class AreaCompare : IEqualityComparer<Area>
+{
+    public bool Equals(Area a, Area b)
+    {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.pos == b.pos;
+    }
+
+    public int GetHashCode(Area a)
+        => a.pos.GetHashCode();
+}
+
 public class Vertex
 {
     public Vector3 coordinate;
@@ -85,16 +164,29 @@ public class Vertex
     // public bool isInFrontOfIntersection;    // 交点の手前にある頂点ならtrue, 直後の点ならfalse
     public bool isTakenByPolygon;
     public bool isFirstPoint;
-    public bool isIntersectionPoint;
 
     // 交点の時に用いる情報
     public int indexI;
     public int indexJ;
     public float distance;
 
+    // 方向選びの際に用いる外積値
+    public float cross;
+
     public Vertex(Vector3 coordinate)
     {
         this.coordinate = coordinate;
+    }
+
+    // コピーコンストラクタ
+    public Vertex(Vertex v)
+    {
+        this.coordinate = v.coordinate;
+        this.next = v.next;
+        this.prev = v.prev;
+        this.neighbor = v.neighbor;
+        this.isTakenByPolygon = v.isTakenByPolygon;
+        this.isFirstPoint = v.isFirstPoint;
     }
 }
 
@@ -162,8 +254,13 @@ public class CityCreate : MonoBehaviour
     public GameObject Guide;                            // ガイドの床
     public GameObject ViewCamera;                       // 眺めるモードのカメラ
 
+    private static IEnumerable<Area> areas;
+
     // デバッグ用
-    private static bool isDataDebug = false;
+    public static bool isDataDebug = false;
+    public static bool isAreaDebug = false;
+    private static int rightKeyCount = 0;
+    private static int upKeyCount = 0;
     private List<List<Vertex>> linesVertices;
     private static Vertex currentDebugVertex;
     private static bool isNeighbor = false;
@@ -181,7 +278,7 @@ public class CityCreate : MonoBehaviour
         CrossPropaties = new List<CrossPropaty>();
         Vertex_and_Intersections = new List<List<VertexAttribute>>();
         AreaObjects = new List<GameObject>();
-        List<List<Vertex>> linesVertices = new List<List<Vertex>>();
+        List<List<Vertex>> linesVertices = new List<List<Vertex>>();        
         // 曲線をまとめる親Obj
         LinesObj = Instantiate(ParentObj, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
         LinesObj.name = "Lines";
@@ -391,28 +488,7 @@ public class CityCreate : MonoBehaviour
                                 intersectionPoints.Add(coordinate);
 
                             }
-
-                            /*
-                            SegmentIndex currentSegmentIndex = new SegmentIndex(i, k, i, k + 1, j, l, j, l + 1);
-
-                            bool judge_flag = true;
-
-
-                            // 頂点のインデックスが入れ替わっていると同じ判定を二回繰り返してしまう
-                            for (int m = 0; m < CrossPair.Count; m++)
-                            {
-                                if (CrossPair[m].p0a == j && CrossPair[m].p0b == l && CrossPair[m].p1a == j && CrossPair[m].p1b == l + 1 && CrossPair[m].q0a == i && CrossPair[m].q0b == k && CrossPair[m].q1a == i && CrossPair[m].q1b == k + 1)
-                                {
-                                    // 頂点が入れ替わっているだけならフラグをfalseに
-                                    judge_flag = false;
-                                }
-                            }
                             
-                            if(judge_flag == true)
-                            {
-                                CrossJudge(p0, p1, q0, q1, currentSegmentIndex, Lines[i], Lines[j]);
-                            }  
-                            */
                         }
                     }
                 }
@@ -420,11 +496,6 @@ public class CityCreate : MonoBehaviour
 
             // 交点リストのソート
             IOrderedEnumerable<Vertex> sortedIntersections = intersectionVertices.OrderBy(v => v.indexI).ThenBy(v => v.indexJ).ThenBy(v => v.distance);
-
-            foreach(Vertex v in sortedIntersections)
-            {
-                Debug.Log(v.indexI + " , " + v.indexJ + " : " + v.coordinate);
-            }
 
             // 挿入            
             foreach(Vertex v in sortedIntersections)
@@ -496,163 +567,81 @@ public class CityCreate : MonoBehaviour
                 }
             }
 
-            currentDebugVertex = linesVertices[0][0];           
+            currentDebugVertex = linesVertices[0][0];
             // 閉領域検出
+            List<Area> areaList = GetAreas(linesVertices);
+            areas = areaList.Distinct(new AreaCompare()).ToList();
+            Debug.Log(areas.Count());
 
-            /*
-            for (int i = 0; i < buildGenerateCount; i++)
+            // 反時計回りにソート
+            foreach(Area a in areas)
             {
-                BuildGenerate(i);
-            }
-            */
-
-            /*
-            // 交点リストのソート
-            // ここバグなおった
-            CrossPropaties.Sort((a, b) => a.CurveIndex - b.CurveIndex);
-            List<CrossPropaty> CrossPropatySortList = new List<CrossPropaty>();
-            List<List<CrossPropaty>> CrossPropatiesSortList = new List<List<CrossPropaty>>();
-
-            for (int i = 0; i < CrossPropaties.Count - 1; i++)
-            {
-
-                if((CrossPropaties[i].CurveIndex == CrossPropaties[i + 1].CurveIndex) && (CrossPropaties[i].SegmentIndex == CrossPropaties[i + 1].SegmentIndex))
-                {
-                    CrossPropatySortList.Add(CrossPropaties[i]);
-                    // 最後の処理だったら
-                    if(i + 1 == CrossPropaties.Count - 1)
-                    {
-                        CrossPropatySortList.Add(CrossPropaties[i + 1]);
-                        CrossPropatiesSortList.Add(CrossPropatySortList);
-                    }
-                }
-                else
-                {
-                    CrossPropatySortList.Add(CrossPropaties[i]);
-                    List<CrossPropaty> CrossPropatySortListBuffer = new List<CrossPropaty>(CrossPropatySortList);
-                    CrossPropatiesSortList.Add(CrossPropatySortListBuffer);
-                    CrossPropatySortList.Clear();
-
-                    // 最後の処理だったら
-                    if(i + 1 == CrossPropaties.Count - 1)
-                    {
-                        CrossPropatySortList.Add(CrossPropaties[i + 1]);
-                        CrossPropatiesSortList.Add(CrossPropatySortList);
-                    }
-                }
-
+                a.CCWSort();
+                foreach (Vertex v in a.vertices) Debug.Log(v.coordinate);
+                Debug.Log("------");
             }
 
-            for(int i = 0; i < CrossPropatiesSortList.Count; i++)
+            // AreaクラスをPolygonクラスに変換
+            List<Polygon> polygons = new List<Polygon>();
+            foreach(Area a in areas)
             {
-                Vector3 targetpoint;
-                if(CrossPropatiesSortList[i][0].SegmentIndex == 0)
-                {
-                    targetpoint = Lines[CrossPropatiesSortList[i][0].CurveIndex][CrossPropatiesSortList[i][0].SegmentIndex];
-                }
-                else
-                {
-                    targetpoint = Lines[CrossPropatiesSortList[i][0].CurveIndex][CrossPropatiesSortList[i][0].SegmentIndex - 1];
-                }
-
-                CrossPropatiesSortList[i].Sort((a, b) => ((int) Mathf.Sqrt((targetpoint.x - a.CrossCoordinate.x) * (targetpoint.x - a.CrossCoordinate.x) + (targetpoint.z - a.CrossCoordinate.z) * (targetpoint.z - a.CrossCoordinate.z)))
-                                                       - ((int) Mathf.Sqrt((targetpoint.x - b.CrossCoordinate.x) * (targetpoint.x - b.CrossCoordinate.x) + (targetpoint.z - b.CrossCoordinate.z) * (targetpoint.z - b.CrossCoordinate.z))));
-
+                polygons.Add(a.ConvertToPolygon());
             }
-            // ここまでやった
-            //for (int i = 0; i < CrossPropatiesSortList.Count; i++)
-            //{
-            //    for (int j = 0; j < CrossPropatiesSortList[i].Count; j++)
-            //    {
-            //        Debug.Log("Lines = " + CrossPropatiesSortList[i][j].CurveIndex + " , Segments = " + CrossPropatiesSortList[i][j].SegmentIndex + " , Coodi = " + CrossPropatiesSortList[i][j].CrossCoordinate);
-
-            //    }
-
-            //    Debug.Log("----------------");
-            //}
-
-
-            //// 交点リストと線分リストに属性を持たせる            
-            List<List<VertexAttribute>> LinesAttribute = new List<List<VertexAttribute>>();
-            List<VertexAttribute> CrossAttribute = new List<VertexAttribute>();
-
-            //// 線分リストに属性を持たせる  
-            //for (int i = 0; i < Lines.Count; i++)
-            //{
-            //    List<VertexAttribute> LineAttribute = new List<VertexAttribute>();
-
-            //    for (int j = 0; j < Lines[i].Count; j++)
-            //    {
-            //        // 端点属性を与える
-            //        if(j == 0 || j == Lines[i].Count - 1)
-            //        {
-            //            LineAttribute.Add(new VertexAttribute("ep", Lines[i][j]));
-            //        }
-            //        else
-            //        {
-            //            LineAttribute.Add(new VertexAttribute("other", Lines[i][j]));
-            //        }
-
-            //    }
-            //    LinesAttribute.Add(LineAttribute);
-            //}
-
-            //// 交点リストに属性を持たせる 
-            //for (int i = 0; i < CrossPropatiesSortList.Count; i++)
-            //{
-            //    for (int j = 0; j < CrossPropatiesSortList[i].Count; j++)
-            //    {
-            //        CrossAttribute.Add(new VertexAttribute("cross", CrossPropatiesSortList[i][j].CrossCoordinate));
-            //    }
-
-            //}
-    
-            // 交点を頂点として含めた線分の頂点リストをつくっちゃおう
-            // できたああ
-            int temp = 0;      // 変数名仮置き
-
-            for(int i = 0; i < Lines.Count; i++)
+            foreach(var v in polygons)
             {
-                List<VertexAttribute> Vertex_and_Intersection = new List<VertexAttribute>();
-                int cnt = 0;
-
-                for (int j = 0; j < CrossPropaties.Count; j++)
-                {
-                    if (i == CrossPropaties[j].CurveIndex)
-                    {
-                        cnt++;
-                    }
-                }
-
-                for (int j = 0; j < Lines[i].Count; j++)
-                {
-
-                    for(int k = 0; k < cnt; k++)
-                    {
-                        if (temp < CrossPropaties.Count && CrossPropaties[temp].CurveIndex == i && CrossPropaties[temp].SegmentIndex == j)
-                        {
-                            Vertex_and_Intersection.Add(CrossAttribute[temp]);
-                            temp++;
-                        }
-                    }
-
-                    Vertex_and_Intersection.Add(LinesAttribute[i][j]);
-
-                }
-
-                Vertex_and_Intersections.Add(Vertex_and_Intersection);
+                v.DrawPolygon(Color.white);
             }
 
-
-            // 閉領域を検出            
-            List<List<VertexAttribute>> Areas = new List<List<VertexAttribute>>();
-            Areas = AriaSerch(Vertex_and_Intersections);
-            MakeArea(Areas);
-            */
-            build_flag = true;
-
+            List<List<Cell>> cellsList = new List<List<Cell>>();
+            // 面積を計算して、その大きさに応じた母点数で分割
+            // ボロノイ分割
             
+            foreach(Polygon p in polygons)
+            {
+                // float area = p.GetArea();
+                // Debug.Log("area = " + area);
+                // 100m * 100mで建物10個くらい　1000m^2で1個
+                List<Cell> cells = new List<Cell>();
+                cells = new IncrementalVoronoi().Execute(p, 10);
+                foreach (Cell c in cells) Instantiate(CrossObj, new Vector3(c.cellPos.x, 0f, c.cellPos.y), Quaternion.identity);
+                cellsList.Add(cells);
+            }
 
+            foreach(var list in cellsList)
+            {
+                foreach (var c in list)
+                {
+                    // c.DrawCell(Color.blue);
+                }
+            }
+            
+            // GreinerHormannクリッピング
+            List<List<Polygon>> buildingFloors = new List<List<Polygon>>();
+            
+            for(int i = 0; i < cellsList.Count; i++)
+            {
+                List<Cell> list = cellsList[i];
+                foreach(Cell c in list)
+                {
+                    //foreach(Vector2 v in c.GetVerts())
+                    //{
+                    //    Debug.Log(v);
+                    //}
+                    //Debug.Log("-------");
+                    Polygon polygon = c.ConvertToPolygon();
+                    // polygon = polygon.Manhattan();
+                    List<List<Vector2>> clippedPolygons = new GreinerHormann().Execute(polygon.GetVertices(), polygons[i].GetVertices());
+
+                    foreach(List<Vector2> l in clippedPolygons)
+                    {
+                        Polygon poly = new Polygon(l);
+                        // poly = poly.Manhattan();
+                        poly.DrawPolygon(Color.white);
+                    }
+                }
+            }
+            
+            build_flag = true;                   
             // 床と眺めるカメラを設置
             Guide.SetActive(false);
             Floor.SetActive(true);
@@ -667,22 +656,25 @@ public class CityCreate : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.D))
         {
             isDataDebug = !isDataDebug;
+            isAreaDebug = !isAreaDebug;
             if (isDataDebug == true)
             {
                 Debug.Log("デバッグ中だぞ");
             }
         }
-        if (Input.GetKeyDown(KeyCode.RightArrow) && isDataDebug == true)
+        if (Input.GetKeyDown(KeyCode.RightArrow) && isAreaDebug == true)
         {
-            DataStructureTest(linesVertices, KeyCode.RightArrow);
+            // DataStructureTest(linesVertices, KeyCode.RightArrow);
+            AreaTest(areas.ToList(), KeyCode.RightArrow);
         }
         if (Input.GetKeyDown(KeyCode.LeftArrow) && isDataDebug == true)
         {
             DataStructureTest(linesVertices, KeyCode.LeftArrow);
         }
-        if (Input.GetKeyDown(KeyCode.UpArrow) && isDataDebug == true)
+        if (Input.GetKeyDown(KeyCode.UpArrow) && isAreaDebug == true)
         {
-            DataStructureTest(linesVertices, KeyCode.UpArrow);
+            // DataStructureTest(linesVertices, KeyCode.UpArrow);
+            AreaTest(areas.ToList(), KeyCode.UpArrow);
         }
 
         // 交点確認
@@ -698,18 +690,28 @@ public class CityCreate : MonoBehaviour
     private void DebugTest()
     {
         List<Vector3> line = new List<Vector3>();
-        line.Add(new Vector3(-200f, 0f, 0f));
-        line.Add(new Vector3(200f, 0f, 0f));
+        line.Add(new Vector3(-200f, 0f, 50f));
+        line.Add(new Vector3(200f, 0f, 50f));
         Lines.Add(line);
         line = new List<Vector3>();
 
-        line.Add(new Vector3(-100f, 0f, 100f));
-        line.Add(new Vector3(-100f, 0f, -100f));
+        line.Add(new Vector3(-100f, 0f, 200f));
+        line.Add(new Vector3(-100f, 0f, -200f));
         Lines.Add(line);
         line = new List<Vector3>();
 
-        line.Add(new Vector3(100f, 0f, 100f));
-        line.Add(new Vector3(100f, 0f, -100f));
+        line.Add(new Vector3(-200f, 0f, -50f));
+        line.Add(new Vector3(200f, 0f, -50f));
+        Lines.Add(line);
+        line = new List<Vector3>();
+
+        line.Add(new Vector3(0f, 0f, 200f));
+        line.Add(new Vector3(0f, 0f, -200f));
+        Lines.Add(line);
+        line = new List<Vector3>();
+
+        line.Add(new Vector3(100f, 0f, 200f));
+        line.Add(new Vector3(100f, 0f, -200f));
         Lines.Add(line);
         
         for(int i = 0; i < Lines.Count; i++)
@@ -718,7 +720,7 @@ public class CityCreate : MonoBehaviour
             {
                 Debug.DrawLine(Lines[i][j], Lines[i][j + 1], Color.white, 100000f);
             }
-        }
+        }        
     }
 
     private void DataStructureTest(List<List<Vertex>> linesVertices, KeyCode key)
@@ -757,6 +759,33 @@ public class CityCreate : MonoBehaviour
         }
     }
 
+    private void AreaTest(List<Area> areas, KeyCode key)
+    {        
+        // 初回
+        if (GameObject.Find("current") == false)
+        {
+            GameObject obj = Instantiate(CrossObj, areas[0].vertices[0].coordinate, Quaternion.identity);
+            obj.name = "current";
+            // Debug.Log("next = " + currentDebugVertex.next + "  , prev = " + currentDebugVertex.prev + "  , neighbor = " + currentDebugVertex.neighbor);
+        }
+        else
+        {
+            if (key == KeyCode.RightArrow)
+            {
+                GameObject.Find("current").transform.position = areas[upKeyCount].vertices[(rightKeyCount + areas[upKeyCount].vertices.Count + 1) % areas[upKeyCount].vertices.Count].coordinate;
+                rightKeyCount++;
+                // Debug.Log("next = " + currentDebugVertex.next + "  , prev = " + currentDebugVertex.prev + "  , neighbor = " + currentDebugVertex.neighbor);
+            }
+
+            if(key == KeyCode.UpArrow)
+            {
+                GameObject.Find("current").transform.position = areas[(upKeyCount + areas.Count + 1) % areas.Count].vertices[0].coordinate;
+                upKeyCount++;
+                rightKeyCount = 0;
+                GameObject.Find("current").GetComponent<Renderer>().material.color = new Color(Random.value, Random.value, Random.value);
+            }
+        }
+    }
     // 線オブジェクトの追加を行う
     private void AddLineObject()
     {
@@ -929,126 +958,327 @@ public class CityCreate : MonoBehaviour
         return result;
     }
 
-    private List<List<Vertex>> GetAreas(List<List<Vertex>> linesVertces)
+    private List<Area> GetAreas(List<List<Vertex>> linesVertices)
     {
-        List<List<Vertex>> result = new List<List<Vertex>>();
-
-        for(int i = 0; i < linesVertces.Count; i++)
+        int trails = 0;
+        List<Area> result = new List<Area>();
+        for(int i = 0; i < linesVertices.Count; i++)
         {
-            // 曲線の最初の頂点
-            Vertex StartVertex = linesVertces[i][0];
+            Vertex startVertex = linesVertices[i][0];   // 捜査開始点
             int safety = 0;
             while (true)
             {
-                if(StartVertex.next == null)
-                {
-                    break;
-                }
-
-                // 交点なら捜査開始
-                if(StartVertex.neighbor != null)
-                {
-                    List<Vertex> area = new List<Vertex>();
-                    // 全頂点のisTakenByPolygonをfalseにする
-                    foreach(List<Vertex> ls in linesVertces)
+                // currentVertexのisFirstPointがfalseになってるぅ
+                // Debug.Log("<color=green>" + startVertex.coordinate + "</color>");
+                // 開始点が交点でなければ捜査開始
+                if (startVertex.neighbor == null && startVertex.next != null && startVertex.prev!= null)
+                {                    
+                    // 開始点から前に進むケースと後ろに進むケースを考える
+                    bool isMovingForward = true;
+                    for(int j = 0; j < 2; j++)
                     {
-                        foreach(Vertex v in ls)
+                        trails++;
+                        isMovingForward = j == 0 ? true : false;
+                        // 初期化
+                        foreach (List<Vertex> ls in linesVertices)
                         {
-                            v.isTakenByPolygon = false;
-                            v.isFirstPoint = false;
-                        }
-                    }
-
-                    area.Add(StartVertex);
-                    StartVertex.isFirstPoint = true;
-                    Vertex currentVertex = StartVertex;                    
-                    currentVertex.isTakenByPolygon = true;
-
-                    // 一周or端点まで行くまでループ
-                    int safetyA = 0;
-                    while (true)
-                    {
-
-                        // 進む方向の選択(候補は最大4つ)
-                        List<Vertex> candidateVectors = new List<Vertex>();
-                        Vertex candidateVectorA = currentVertex.prev != null ? currentVertex.prev : null;
-                        Vertex candidateVectorB = currentVertex.next != null ? currentVertex.next : null;
-                        Vertex candidateVectorC = currentVertex.neighbor.prev != null ? currentVertex.neighbor.prev : null;
-                        Vertex candidateVectorD = currentVertex.neighbor.next != null ? currentVertex.neighbor.next : null;
-                        candidateVectors.Add(candidateVectorA);
-                        candidateVectors.Add(candidateVectorB);
-                        candidateVectors.Add(candidateVectorC);
-                        candidateVectors.Add(candidateVectorD);
-
-                        // (-1, 0)に一番近い方向が進む道
-                        Vertex nextVertex = null;
-                        float maxDot = float.NegativeInfinity;
-                        Vector2 standardVector = new Vector2(-1f, 0f);
-                        foreach (Vertex v in candidateVectors)
-                        {
-                            if (v != null)
+                            foreach (Vertex v in ls)
                             {
-                                Vector3 compare = (v.coordinate - currentVertex.coordinate).normalized;
-                                float dot = Vector2.Dot(standardVector, new Vector2(compare.x, compare.z));
-
-                                if (dot > maxDot)
+                                Vertex defaultVertex = v;
+                                while(true)
                                 {
-                                    maxDot = dot;
-                                    nextVertex = v;
+                                    defaultVertex.isFirstPoint = false;
+                                    defaultVertex.isTakenByPolygon = false;
+                                    if (defaultVertex.next != null) defaultVertex = defaultVertex.next;
+                                    else break;
                                 }
                             }
                         }
 
-                        area.Add(nextVertex);
-                        nextVertex.isTakenByPolygon = true;
-                        // nextVertexをたどる
-                        int safetyB = 0;
+                        bool mustContinue = true;
+                        bool isSuccess = false;
+                        List<Vertex> areaVertices = new List<Vertex>();
+
+                        Vertex currentVertex = new Vertex(startVertex);
+                        Vector3 startCoordinate = new Vector3(startVertex.coordinate.x, startVertex.coordinate.y, startVertex.coordinate.z);
+                        currentVertex.isFirstPoint = true;
+                        // Debug.Log("<color=red>" + currentVertex.coordinate + "</color>");
+                        currentVertex.isTakenByPolygon = true;
+                        areaVertices.Add(currentVertex);
+
+                        // 次点の決定
+                        if ((isMovingForward == true && currentVertex.next == null) || (isMovingForward == false && currentVertex.prev == null))
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            currentVertex = isMovingForward == true ? currentVertex.next : currentVertex.prev;
+                        }
+
+                        int safetyA = 0;
+                        // 交点or端点があるまで進む
                         while (true)
                         {
-                            // すでに辿った頂点か
-                            if(currentVertex.isTakenByPolygon == true)
+                            // 交点の場合
+                            if(currentVertex.neighbor != null)
                             {
-                                // それが開始点なら検出成功
-                                if(currentVertex.isFirstPoint == true)
-                                {
-
-                                }
+                                currentVertex.isTakenByPolygon = true;
+                                currentVertex.neighbor.isTakenByPolygon = true;
+                                areaVertices.Add(currentVertex);
+                                break;
+                            }
+                            // 端点の場合
+                            else if((isMovingForward == true && currentVertex.next == null) || (isMovingForward == false && currentVertex.prev == null))
+                            {
+                                mustContinue = false;
+                                break;
+                            }
+                            // それ以外(普通の点)
+                            else
+                            {
+                                currentVertex.isTakenByPolygon = true;
+                                areaVertices.Add(currentVertex);
+                                currentVertex = isMovingForward == true ? currentVertex.next : currentVertex.prev;
                             }
 
                             safetyA++;
-                            if (safetyB > 100000)
-                            {
-                                Debug.Log("無限ループに突入したぞ");
-                                break;
-                            }
+                            if (safetyA > 100000) { Debug.Log("無限ループだぞ"); mustContinue = false; break; }
                         }
 
-
-                        safetyA++;
-                        if (safetyA > 100000)
+                        // 交点の検出に成功していたら
+                        if (mustContinue == true)
                         {
-                            Debug.Log("無限ループに突入したぞ");
-                            break;
+                            int safetyB = 0;
+                            // [左折してその道をたどる]を繰り返す
+                            while (true)
+                            {
+                                // 左折
+                                Vertex prevVertex = isMovingForward == true ? currentVertex.prev : currentVertex.next;
+                                List<Vertex> nextVertices = new List<Vertex>();     // 候補となる3方向
+                                for(int k = 0; k < 3; k++)
+                                {
+                                    if(k == 0)
+                                    {
+                                        nextVertices.Add(isMovingForward == true ? currentVertex.next : currentVertex.prev);
+                                    }
+                                    else if(k == 1 && currentVertex.neighbor.next != null)
+                                    {
+                                        nextVertices.Add(currentVertex.neighbor.next);
+                                    }
+                                    else if(k == 2 && currentVertex.neighbor.prev != null)
+                                    {
+                                        nextVertices.Add(currentVertex.neighbor.prev);
+                                    }                                   
+                                }
+
+                                // (prev → current)ベクトルと(current → next)の外積値を格納(正規化してね)
+                                // ここに問題点
+                                Vector3 pc = (currentVertex.coordinate - prevVertex.coordinate).normalized;
+                                foreach(Vertex v in nextVertices)
+                                {
+                                    v.isTakenByPolygon = true;
+                                    Vector3 cn = (v.coordinate - currentVertex.coordinate).normalized;
+                                    v.cross = pc.x * cn.z - pc.z * cn.x;
+                                }
+
+                                // 外積値でソート(最大, 最小, 中間でソート)    
+                                CrossSort(nextVertices);
+                                // IOrderedEnumerable<Vertex> sortedNextVertices = nextVertices.OrderByDescending(v => v.cross);
+
+                                // 候補に始点があれば
+                                foreach (Vertex v in nextVertices)
+                                {
+                                    // Debug.Log(v.coordinate + " : " + v.isFirstPoint);
+                                    if (v.coordinate == startCoordinate)
+                                    {
+                                        // Debug.Log("!!!");
+                                        // areaVertices.Add(v);
+                                        mustContinue = false;
+                                        isSuccess = true;
+                                        break;
+                                    }
+                                }
+                                if (mustContinue == false) break;
+
+                                // 候補点をたどる                                
+                                for (int k = 0; k < nextVertices.Count() - 1 ; k++)
+                                {
+                                    List<Vertex> preAddList = new List<Vertex>();
+                                    bool mustForrowing = true;                                    
+                                    Vertex preVertex = nextVertices[k];
+                                    preAddList.Add(preVertex);                                    
+                                    // 前進するか後退するか
+                                    if((preVertex.coordinate == currentVertex.next.coordinate) || (preVertex.coordinate == currentVertex.neighbor.next.coordinate))
+                                    {
+                                        isMovingForward = true;
+                                    }
+                                    else
+                                    {
+                                        isMovingForward = false;
+                                    }
+
+                                    if ((isMovingForward == true && preVertex.next == null) || (isMovingForward == false && preVertex.prev == null)) continue;
+                                    Vertex nextVertex = isMovingForward == true ? preVertex.next : preVertex.prev;
+                                    int safetyC = 0;
+
+                                    // たどる
+                                    while (true)
+                                    {
+                                        // 始点に戻ったら
+                                        // Debug.Log(nextVertex.coordinate +" : " + nextVertex.isFirstPoint);
+                                        if(nextVertex.coordinate == startCoordinate)
+                                        {
+                                            // Debug.Log("!!!");
+                                            mustForrowing = false;
+                                            mustContinue = false;
+                                            isSuccess = true;
+                                            foreach (Vertex v in preAddList)
+                                            {
+                                                areaVertices.Add(v);
+                                            }
+                                            break;
+                                            // preAddList.Add(nextVertex);
+                                        }
+                                        // 一度たどった道ならば
+                                        else if(nextVertex.isTakenByPolygon == true)
+                                        {
+                                            // Debug.Log("??" + nextVertex.coordinate);
+                                            mustForrowing = false;
+                                            mustContinue = false;
+                                            isSuccess = false;
+                                            break;
+                                        }
+                                        // 交点なら
+                                        else if(nextVertex.neighbor != null)
+                                        {
+                                            nextVertex.isTakenByPolygon = true;
+                                            nextVertex.neighbor.isTakenByPolygon = true;
+                                            preAddList.Add(nextVertex);
+
+                                            currentVertex = nextVertex;                                            
+                                            mustForrowing = false;
+
+                                            foreach (Vertex v in preAddList)
+                                            {
+                                                areaVertices.Add(v);
+                                            }
+                                            break;
+                                        }
+                                        // 端点なら
+                                        else if ((isMovingForward == true && nextVertex.next == null) || (isMovingForward == false && nextVertex.prev == null))
+                                        {                                            
+                                            if (k == nextVertices.Count - 2)
+                                            {
+                                                mustForrowing = false;
+                                                mustContinue = false;
+                                                isSuccess = false;
+                                                Debug.Log("!");
+                                            }
+                                            break;
+                                        }
+                                        // それ以外(普通の点)
+                                        else
+                                        {
+                                            nextVertex.isTakenByPolygon = true;
+                                            preAddList.Add(nextVertex);
+                                            nextVertex = isMovingForward == true ? nextVertex.next : nextVertex.prev;
+                                        }
+                                        safetyC++;
+                                        if (safetyC > 100) { Debug.Log("無限ループだぞ"); mustContinue = false; break; }
+                                    }
+
+                                    if(mustForrowing == false) break;
+                                }
+
+                                // 閉領域検出が成功or失敗したらぬける
+                                if (mustContinue == false) break;
+                                
+                                safetyB++;
+                                // ここです...
+                                if (safetyB > 100) { Debug.Log("無限ループだぞ"); mustContinue = false; break; }
+                            }
+
+
                         }
+                        else continue;
+
+                        // 閉領域検出が成功していたら
+                        if (isSuccess == true)
+                        {
+                            // areaVertices.RemoveAt(areaVertices.Count - 1);
+                            Vector3 position = new Vector3(0f, 0f, 0f);
+                            foreach(Vertex v in areaVertices)
+                            {
+                                position.x += Mathf.FloorToInt(v.coordinate.x);
+                                position.z += Mathf.FloorToInt(v.coordinate.z);
+                            }
+                            result.Add(new Area { pos = position, vertices = areaVertices });
+                        }
+                        
                     }
                     
-                }
-                else
+                }              
+                // 次点がなければ終了
+                if (startVertex.next == null)
                 {
-                    // 交点でないなら次の点へ
-                    StartVertex = StartVertex.next;
-                }
-
-                safety++;
-                if(safety > 100000)
-                {
-                    Debug.Log("無限ループに突入したぞ");
+                    // Debug.Log("<color=blue>" + "あああああ" + "</color>");
                     break;
+                } 
+                else
+                {                    
+                    startVertex = startVertex.next;
+                    // Debug.Log("<color=blue>" + "いいいいい" + startVertex.coordinate + "</color>");
                 }
+                // Debug.Log(safety);
+                safety++;
+                if (safety > 10000) { Debug.Log("無限ループだぞ"); break; }
+            }
+        }
+        // Debug.Log("success = " + successCnt);
+        // Debug.Log("trails = " + trails);
+        return result;
+    }
+
+    private void CrossSort(List<Vertex> crossList)
+    {
+        float crossMin = float.PositiveInfinity;
+        float crossMax = float.NegativeInfinity;
+        Vertex minVertex = null;
+        Vertex maxVertex = null;
+
+        // 最小と最大を決める
+        foreach(Vertex v in crossList)
+        {
+            if(v.cross < crossMin)
+            {
+                crossMin = v.cross;
+                minVertex = v;
+            }
+            if(v.cross > crossMax)
+            {
+                crossMax = v.cross;
+                maxVertex = v;
             }
         }
 
-        return result;
+        // 最小と最大を取り除く
+        crossList.Remove(minVertex);
+        crossList.Remove(maxVertex);
+
+        Vertex midVertex = null;
+        if(crossList.Count != 0)
+        {
+            midVertex = crossList[0];
+        }
+        crossList.Clear();
+
+        crossList.Add(maxVertex);
+        crossList.Add(minVertex);
+        if(midVertex != null)
+        {
+            crossList.Add(midVertex);
+        }
     }
 
     // 閉領域を検出
