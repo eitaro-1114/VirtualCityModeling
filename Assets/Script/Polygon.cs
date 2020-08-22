@@ -17,7 +17,9 @@ public class Polygon
         if (size < 3)
         {
             // 角数が3以下の場合はエラー
-            throw new System.Exception("頂点数が足らないぞ");
+            Debug.Log("頂点数が足らないぞ");
+            Debug.Break();
+            // throw new System.Exception("頂点数が足らないぞ");
         }
 
         this.vertices = vertices;
@@ -65,9 +67,10 @@ public class Polygon
     {
         for (int i = 0; i < vertices.Count; i++)
         {
-            Debug.DrawLine(GeomUtils.VectorExtend(vertices[i]), GeomUtils.VectorExtend(vertices[(i + 1) % vertices.Count]), color, 10000);
+            Debug.DrawLine(GeomUtils.VectorTwoToThree(vertices[i]), GeomUtils.VectorTwoToThree(vertices[(i + 1) % vertices.Count]), color, 10000);
         }
     }
+
 
     // 指定位置の頂点の取得
     public Vector2 GetVertex(int index)
@@ -203,33 +206,7 @@ public class Polygon
         }
         // 交差回数が奇数の場合はtrue
         return count % 2 == 1;
-    }
-
-    // 凸多角形の面積を計算
-    public float GetArea()
-    {
-        if (isConvex)
-        {
-            float crossSum = 0;     // 外積の合計
-            int size = vertices.Count();
-            // 頂点を巡回
-            for (int i = 0; i < size; i++)
-            {
-                Vector2 v1 = vertices[i];
-                Vector2 v2 = vertices[(i + 1) % size];
-
-                // 外積
-                float cross = GeomUtils.Cross(v1, v2);
-                crossSum += cross;
-
-            }
-            return Mathf.Abs(crossSum / 2.0f);
-        }
-        else
-        {
-            throw new Exception("凹だぞ");
-        }
-    }
+    }    
 
     public Polygon Manhattan()
     {
@@ -304,6 +281,26 @@ public class Polygon
         // ここに内容を記述
 
         return result;
+    }
+
+    // Polygon縮小
+    public void ReductionPolygons()
+    {
+        float scale = 0.8f;
+        // 原点の決定
+        Vector2 center = Vector2.zero;
+        foreach(Vector2 v in vertices) center += v;
+        center /= vertices.Count;
+        Debug.Log(center);
+
+        // 原点から見たPolygonのローカル座標
+        List<Vector2> vertexPos = new List<Vector2>();
+        foreach(Vector2 v in vertices)
+        {
+            vertexPos.Add(((v - center) * scale) + center);
+        }
+
+        vertices = vertexPos;
     }
 }
 
@@ -978,8 +975,7 @@ public class SplitTriangles
 
     public List<Polygon> Excecute(Polygon p)
     {
-        List<Vector2> DetectPoints = new List<Vector2>();
-        DetectPoints = p.GetVertices();
+        List<Vector2> DetectPoints = new List<Vector2>(p.GetVertices());
         List<Polygon> triangles = new List<Polygon>();
 
         while (mustContinue)
@@ -1058,6 +1054,7 @@ public class SplitTriangles
             {
                 // 三角形をListに追加。farPointをDetectPointsから削除して①に戻る
                 triangles.Add(triangle);
+                // ココ！
                 DetectPoints.Remove(farPoint);
             }
 
@@ -1232,6 +1229,17 @@ public class IncrementalVoronoi
 
         // 母点の追加
         GenerateSite(area, sites, siteNum);
+        //sites.Add(new Vector2(-2, 46));
+        //sites.Add(new Vector2(-1, 41));
+        //sites.Add(new Vector2(41, -18));
+
+        //sites.Add(new Vector2(-1050, 46));
+        //sites.Add(new Vector2(-1020, -3));
+        //sites.Add(new Vector2(-1100, -65));
+
+        //sites.Add(new Vector2(-654, 3));
+        //sites.Add(new Vector2(539, 89));
+        //sites.Add(new Vector2(390, 205));
 
         // 上下左右に無限遠点を作成
         float VertsAbsMaxX = float.NegativeInfinity;
@@ -1244,42 +1252,67 @@ public class IncrementalVoronoi
             VertsAbsMaxY = Mathf.Max(VertsAbsMaxY, area.GetVertex(i).y);
             halfWidth = Mathf.Max(VertsAbsMaxX, VertsAbsMaxY);
         }
-        float width = halfWidth * 3f;
+        float width = halfWidth * 5f;
         float bigWidth = halfWidth * 10f;
 
+        // 原点の位置
+        float VertsMaxX = float.NegativeInfinity;
+        float VertsMaxY = float.NegativeInfinity;
+
+        float VertsMinX = float.PositiveInfinity;
+        float VertsMinY = float.PositiveInfinity;
+
+        int areaSize = area.GetVertices().Count;
+
+        for (int i = 0; i < areaSize; i++)
+        {
+            VertsMaxX = Mathf.Max(VertsMaxX, area.GetVertex(i).x);
+            VertsMaxY = Mathf.Max(VertsMaxY, area.GetVertex(i).y);
+
+            VertsMinX = Mathf.Min(VertsMinX, area.GetVertex(i).x);
+            VertsMinY = Mathf.Min(VertsMinY, area.GetVertex(i).y);
+        }
+
+        float center_x = (VertsMaxX + VertsMinX) * 0.5f;
+        float center_y = (VertsMaxY + VertsMinY) * 0.5f;
+
         // 各無限遠点と原点からなる三角形を作成
-        Vector2 C = new Vector2(0.0f, 0.0f);        // 原点
-        Vector2 R = new Vector2(bigWidth, 0.0f);    // 右
-        Vector2 T = new Vector2(0.0f, bigWidth);    // 上
-        Vector2 L = new Vector2(-bigWidth, 0.0f);   // 左
-        Vector2 B = new Vector2(0.0f, -bigWidth);   // 右
+        Vector2 C = new Vector2(0f + center_x, 0f + center_y);        // 原点
+        Vector2 R = new Vector2(bigWidth + center_x, 0.0f + center_y);    // 右
+        Vector2 T = new Vector2(0.0f + center_x, bigWidth + center_y);    // 上
+        Vector2 L = new Vector2(-bigWidth + center_x, 0.0f + center_y);   // 左
+        Vector2 B = new Vector2(0.0f + center_x, -bigWidth + center_y);   // 右
 
         // 三角形C-B-L
-        Cell cell1 = new Cell(new Vector2(-width, -width));
+        Cell cell1 = new Cell(new Vector2(-width + center_x, -width + center_y));
         cell1.edges.Add(new LineSegment(C, L));
         cell1.edges.Add(new LineSegment(L, B));
         cell1.edges.Add(new LineSegment(B, C));
+        // cell1.DrawCell(Color.white);
         cells.Add(cell1);
 
         // 三角形C-B-R
-        Cell cell2 = new Cell(new Vector2(width, -width));
+        Cell cell2 = new Cell(new Vector2(width + center_x, -width + center_y));
         cell2.edges.Add(new LineSegment(C, B));
         cell2.edges.Add(new LineSegment(B, R));
         cell2.edges.Add(new LineSegment(R, C));
+        // cell2.DrawCell(Color.white);
         cells.Add(cell2);
 
         // 三角形C-T-R
-        Cell cell3 = new Cell(new Vector2(width, width));
+        Cell cell3 = new Cell(new Vector2(width + center_x, width + center_y));
         cell3.edges.Add(new LineSegment(C, R));
         cell3.edges.Add(new LineSegment(R, T));
         cell3.edges.Add(new LineSegment(T, C));
+        // cell3.DrawCell(Color.white);
         cells.Add(cell3);
 
         // 三角形C-T-L
-        Cell cell4 = new Cell(new Vector2(-width, width));
+        Cell cell4 = new Cell(new Vector2(-width + center_x, width + center_y));
         cell4.edges.Add(new LineSegment(C, T));
         cell4.edges.Add(new LineSegment(T, L));
         cell4.edges.Add(new LineSegment(L, C));
+        // scell4.DrawCell(Color.white);
         cells.Add(cell4);
 
         // 1つずつ母点を追加
@@ -1307,12 +1340,12 @@ public class IncrementalVoronoi
                 {
                     LineSegment edge = existingCell.edges[k];
 
-                    // existing→centerの直線をnewLineとする
-                    // 辺の頂点がnewLineのどちら側にあるか調べる
+                    // existingとnewCell.posの垂直二等分線を考える
+                    // edge_p1, p2が垂直二等分線を境にしてexistingかnewCell.posのどちら側にあるか調べる
+                    // https://drive.google.com/file/d/1tIcdB2cWqjsMdXHO_dtc1im0z6OqvN7X/view?usp=sharing
                     Vector2 edge_p1 = edge.GetPoints()[0];
                     Vector2 edge_p2 = edge.GetPoints()[1];
-                    // if the entire line is to the left of the line we are drawing now, delete it
-                    // < 0 : 右     = 0 : 線上     > 0 : 左
+                    // 負：existing側　　正：newCell.pos側　　0：垂直二等分線上に存在
                     float relation_p1 = DistanceFromPointToLine(vecBetween, centerPos, edge_p1);
                     float relation_p2 = DistanceFromPointToLine(vecBetween, centerPos, edge_p2);
 
@@ -1324,21 +1357,21 @@ public class IncrementalVoronoi
                     Vector2 edge_p1_expanded = edge_p1 - edgeDir * tolerance;
                     Vector2 edge_p2_expanded = edge_p2 + edgeDir * tolerance;
 
-                    // どちらの頂点もnewLineの左側にあれば
+                    // どちらの頂点もnewCell.pos側にあれば
                     float left_tolerance = -0.001f;
                     if ((relation_p1 > 0f && relation_p2 >= left_tolerance) || (relation_p2 > 0f && relation_p1 >= left_tolerance))
                     {
                         edgesToDelete.Add(edge);
                     }
-                    // 辺とnewLineが交差していれば
+                    // 辺と垂直二等分線が交差していれば
                     else if (AreLinePlaneIntersecting(vecBetween, centerPos, edge_p1_expanded, edge_p2_expanded))
                     {
-                        // 辺とnewlineの交点
+                        // 辺と垂直二等分線の交点
                         Vector2 intersectionPoint = GetLinesIntersectionCoordinate(vecBetween, centerPos, edge_p1, edge_p2);
 
                         criticalPoints.Add(intersectionPoint);
 
-                        // どちらの頂点もnewLineの右側にあれば
+                        // どちらの頂点もexisting側にあれば
                         if (relation_p1 < 0f && relation_p2 < 0f)
                         {
                             // 辺の頂点の1つを交点に移動する
@@ -1351,7 +1384,7 @@ public class IncrementalVoronoi
                                 edge.GetPoints()[1] = intersectionPoint;
                             }
                         }
-                        // 頂点がnewLineを跨いで存在していたら、左側の頂点を移動
+                        // 頂点が垂直二等分線を跨いで存在していたら、newCell.pos側の頂点を交点に移動
                         // Approximately : 2つの浮動小数点値を比較し、近似している場合はtrueを返す
                         else if (relation_p1 > 0f || Mathf.Approximately(relation_p1, 0f))
                         {
@@ -1389,7 +1422,11 @@ public class IncrementalVoronoi
                     edges.Remove(edgesToDelete[l]);
                 }
             }
-            cells.Add(newCell);
+
+            if (newCell.edges.Count > 2)
+            {
+                cells.Add(newCell);
+            }
         }
 
 
@@ -1421,13 +1458,13 @@ public class IncrementalVoronoi
             VertsMinY = Mathf.Min(VertsMinY, area.GetVertex(i).y);
         }
 
-        Debug.Log("Max = " + VertsMaxX + ", " + VertsMaxY);
-        Debug.Log("Min = " + VertsMinX + ", " + VertsMinY);
+        // Debug.Log("Max = " + VertsMaxX + ", " + VertsMaxY);
+        // Debug.Log("Min = " + VertsMinX + ", " + VertsMinY);
 
         for (int i = 0; i < addNum; i++)
         {
             // 母点生成
-            Vector2 site = new Vector2(UnityEngine.Random.Range(VertsMinX, VertsMaxX), UnityEngine.Random.Range(VertsMinY, VertsMaxY));
+            Vector2 site = new Vector2((int)(UnityEngine.Random.Range(VertsMinX, VertsMaxX)), (int)(UnityEngine.Random.Range(VertsMinY, VertsMaxY)));
             // Debug.Log(site);
             // 生成した母点が領域外ならやり直し
             if (!area.Contains(site.x, site.y))
@@ -1441,6 +1478,11 @@ public class IncrementalVoronoi
             }
         }
 
+        foreach (Vector2 v in sites)
+        {
+            // Debug.Log("site : " + v);
+        }
+        // Debug.Log("---------");
         return sites;
     }
 
@@ -1514,6 +1556,13 @@ public class IncrementalVoronoi
     {
         for (int i = 0; i < cells.Count; i++)
         {
+            if (cells[i].edges.Count < 3)
+            {
+                Debug.Log("cellPos = " + cells[i].cellPos);
+                foreach (var v in cells[i].edges) Debug.Log("Edge : " + v.GetPoints()[0] + ", " + v.GetPoints()[1]);
+                Debug.Log("辺が少ないぞ");
+                Debug.Break();
+            }
             List<LineSegment> cellEdges = cells[i].edges;
 
             for (int j = cellEdges.Count - 1; j >= 0; j--)
@@ -1592,7 +1641,7 @@ public class Cell
 
     public void MoveEdgePoint(int index, int edgesIndesx, Vector2 distination)
     {
-        edges[index].MovePoint(edgesIndesx, distination);
+        this.edges[index].MovePoint(edgesIndesx, distination);
     }
 
     public List<Vector2> GetVerts()
@@ -1700,7 +1749,10 @@ public class GreinerHormann
         {
             if (IsPolygonInsidePolygon(polyVector, clipPolyVector))
             {
-                Debug.Log("Poly is inside clip poly");
+                // Debug.Log("Poly is inside clip poly");
+                finalPolygon = new List<List<Vector2>>();
+                finalPolygon.Add(polyVector);
+                return finalPolygon;
             }
             else if (IsPolygonInsidePolygon(clipPolyVector, polyVector))
             {
@@ -2053,7 +2105,7 @@ public class GeomUtils
     }
 
     // Vector2からVector3
-    public static Vector3 VectorExtend(Vector2 vec)
+    public static Vector3 VectorTwoToThree(Vector2 vec)
     {
         return new Vector3(vec.x, 0.0f, vec.y);
     }

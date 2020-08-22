@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="Assets\Script\Build_Hit.cs" />
     <Compile Include="Assets\Script\CityCreate.cs" />
+    <Compile Include="Assets\Script\CreateMeshes.cs" />
     <Compile Include="Assets\Script\Cross.cs" />
     <Compile Include="Assets\Script\Line.cs" />
     <Compile Include="Assets\Script\Polygon.cs" />

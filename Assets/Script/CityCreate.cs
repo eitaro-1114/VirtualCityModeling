@@ -248,7 +248,9 @@ public class CityCreate : MonoBehaviour
     private GameObject StraightObj;                     // 補助線のインスタンス
 
     public bool build_flag = false;                     // 建物生成が終わったか
-    public GameObject CrossObj;                         // 交点確認用オブジェクト    
+    public GameObject CrossObj;                         // 交点確認用オブジェクト  
+
+    public Material buildingMaterial;
 
     public GameObject Floor;                            // 床オブジェクト
     public GameObject Guide;                            // ガイドの床
@@ -571,14 +573,14 @@ public class CityCreate : MonoBehaviour
             // 閉領域検出
             List<Area> areaList = GetAreas(linesVertices);
             areas = areaList.Distinct(new AreaCompare()).ToList();
-            Debug.Log(areas.Count());
+            // Debug.Log(areas.Count());
 
             // 反時計回りにソート
             foreach(Area a in areas)
             {
                 a.CCWSort();
-                foreach (Vertex v in a.vertices) Debug.Log(v.coordinate);
-                Debug.Log("------");
+                // foreach (Vertex v in a.vertices) Debug.Log(v.coordinate);
+                // Debug.Log("------");
             }
 
             // AreaクラスをPolygonクラスに変換
@@ -589,7 +591,7 @@ public class CityCreate : MonoBehaviour
             }
             foreach(var v in polygons)
             {
-                v.DrawPolygon(Color.white);
+                // v.DrawPolygon(Color.white);
             }
 
             List<List<Cell>> cellsList = new List<List<Cell>>();
@@ -602,22 +604,13 @@ public class CityCreate : MonoBehaviour
                 // Debug.Log("area = " + area);
                 // 100m * 100mで建物10個くらい　1000m^2で1個
                 List<Cell> cells = new List<Cell>();
-                cells = new IncrementalVoronoi().Execute(p, 10);
+                cells = new IncrementalVoronoi().Execute(p, 6);
                 foreach (Cell c in cells) Instantiate(CrossObj, new Vector3(c.cellPos.x, 0f, c.cellPos.y), Quaternion.identity);
                 cellsList.Add(cells);
             }
 
-            foreach(var list in cellsList)
-            {
-                foreach (var c in list)
-                {
-                    // c.DrawCell(Color.blue);
-                }
-            }
-            
             // GreinerHormannクリッピング
-            List<List<Polygon>> buildingFloors = new List<List<Polygon>>();
-            
+            List<List<Polygon>> buildingFloors = new List<List<Polygon>>();            
             for(int i = 0; i < cellsList.Count; i++)
             {
                 List<Cell> list = cellsList[i];
@@ -631,16 +624,31 @@ public class CityCreate : MonoBehaviour
                     Polygon polygon = c.ConvertToPolygon();
                     // polygon = polygon.Manhattan();
                     List<List<Vector2>> clippedPolygons = new GreinerHormann().Execute(polygon.GetVertices(), polygons[i].GetVertices());
-
+                    List<Polygon> polyList = new List<Polygon>();
                     foreach(List<Vector2> l in clippedPolygons)
                     {
                         Polygon poly = new Polygon(l);
+                        polyList.Add(poly);
                         // poly = poly.Manhattan();
-                        poly.DrawPolygon(Color.white);
+                        // poly.DrawPolygon(Color.white);
                     }
+                    buildingFloors.Add(polyList);
                 }
             }
             
+            // ポリゴン縮小
+            foreach(List<Polygon> list in buildingFloors)
+            {
+                foreach(Polygon p in list)
+                {
+                    p.ReductionPolygons();
+                    // p.DrawPolygon(Color.white);
+                }
+            }
+
+            // 建物生成
+            GenerateBuildings(buildingFloors);
+
             build_flag = true;                   
             // 床と眺めるカメラを設置
             Guide.SetActive(false);
@@ -1279,8 +1287,122 @@ public class CityCreate : MonoBehaviour
         {
             crossList.Add(midVertex);
         }
+    }    
+
+    private void GenerateBuildings(List<List<Polygon>> polygonsList)
+    {
+        foreach(List<Polygon> list in polygonsList)
+        {
+            foreach(Polygon polygon in list)
+            {
+                CreateBuildingMesh(polygon);
+                // Debug.Log("area = " + polygon.GetArea());
+            }
+        }
     }
 
+    private void CreateBuildingMesh(Polygon polygon)
+    {
+        GameObject obj = new GameObject("Building", new[] { typeof(MeshFilter), typeof(MeshRenderer) });
+        // polygon.DrawPolygon(Color.red);
+
+        float area = GetArea(polygon) / 100f;
+        Debug.Log(area);
+        float height = 0f;
+        if (area <= 60f) height = Random.Range(10.0f, 50.0f);
+        else if (area <= 100f) height = Random.Range(10.0f, 110.0f);
+        else height = Random.Range(700.0f, 110.0f);
+
+        List<Polygon> roof = new SplitTriangles().Excecute(polygon);
+        List<Vector3> meshVertex = new List<Vector3>();        
+        List<int> meshIndex = new List<int>();          // 壁、屋根のインデックス
+
+        // 壁の頂点の追加、インデックスの設定
+        int size = polygon.GetVertices().Count;
+        for (int i = 0; i < size; i++)
+        {
+            meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, 0f, polygon.GetVertices()[i].y));
+            meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, height, polygon.GetVertices()[i].y));
+            meshVertex.Add(new Vector3(polygon.GetVertices()[(i + 1) % size].x, 0f, polygon.GetVertices()[(i + 1) % size].y));
+
+            meshVertex.Add(new Vector3(polygon.GetVertices()[(i + 1) % size].x, 0f, polygon.GetVertices()[(i + 1) % size].y));
+            meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, height, polygon.GetVertices()[i].y));
+            meshVertex.Add(new Vector3(polygon.GetVertices()[(i + 1) % size].x, height, polygon.GetVertices()[(i + 1) % size].y));
+
+            meshIndex.Add(i * 6);
+            meshIndex.Add((i * 6) + 1);
+            meshIndex.Add((i * 6) + 2);            
+
+            meshIndex.Add((i * 6) + 3);
+            meshIndex.Add((i * 6) + 4);
+            meshIndex.Add((i * 6) + 5);            
+
+        }
+        //for (int i = 0; i < size; i++)
+        //{
+        //    meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, 0f, polygon.GetVertices()[i].y));
+        //    meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, height, polygon.GetVertices()[i].y));
+
+        //    meshIndex.Add((i * 2) % (size * 2));           // 0            
+        //    meshIndex.Add((i * 2 + 1) % (size * 2));       // 1
+        //    meshIndex.Add((i * 2 + 2) % (size * 2));       // 2
+
+        //    meshIndex.Add((i * 2 + 1) % (size * 2));       // 1
+        //    meshIndex.Add((i * 2 + 3) % (size * 2));       // 3
+        //    meshIndex.Add((i * 2 + 2) % (size * 2));       // 2
+
+        //}
+
+        // 屋根の頂点の追加、インデックスの追加
+        for (int i = 0; i < roof.Count; i++)
+        {
+            List<int> roofIndex = new List<int>();
+            for (int j = 0; j < roof[i].GetVertices().Count; j++)
+            {
+                meshVertex.Add(new Vector3(roof[i].GetVertex(j).x, height, roof[i].GetVertex(j).y));                
+                roofIndex.Add(meshVertex.Count - 1);
+            }
+            roofIndex.Reverse();
+            foreach(int j in roofIndex)
+            {
+                meshIndex.Add(j);
+            }
+        }
+
+        Mesh mesh = new Mesh();
+        mesh.vertices = meshVertex.ToArray();
+        mesh.triangles = meshIndex.ToArray();
+
+        mesh.RecalculateNormals();
+
+        var filter = obj.GetComponent<MeshFilter>();
+        filter.sharedMesh = mesh;
+
+        var renderer = obj.GetComponent<MeshRenderer>();
+        renderer.material = buildingMaterial;
+
+        //// 法線ベクトルの再計算処理
+        //mesh.RecalculateNormals();
+        //MeshFilter filter = obj.GetComponent<MeshFilter>();
+        //// mesh.normals = polygonVertex.ToArray();
+        //obj.GetComponent<MeshRenderer>().material = buildingMaterial;
+        //filter.mesh = mesh;
+
+    }
+    // 多角形の面積を計算
+    public float GetArea(Polygon polygon)
+    {
+        List<Vector2> vertices = polygon.GetVertices();
+        float area = 0f;
+        List<Polygon> triangles = new SplitTriangles().Excecute(new Polygon(vertices));
+        foreach (Polygon p in triangles)
+        {
+            Vector2 AB = p.GetVertex(1) - p.GetVertex(0);
+            Vector2 AC = p.GetVertex(2) - p.GetVertex(0);
+            area += Mathf.Abs(GeomUtils.Cross(AB, AC) * 0.5f);
+        }
+        return area;
+    }
     // 閉領域を検出
     List<List<VertexAttribute>> AriaSerch(List<List<VertexAttribute>> vertex)
     {
