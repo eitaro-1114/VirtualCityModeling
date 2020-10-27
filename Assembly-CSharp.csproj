@@ -60,6 +60,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Script\Bitmap.cs" />
+    <Compile Include="Assets\Script\bitmapDemo.cs" />
     <Compile Include="Assets\Script\Build_Hit.cs" />
     <Compile Include="Assets\Script\CityCreate.cs" />
     <Compile Include="Assets\Script\CreateMeshes.cs" />

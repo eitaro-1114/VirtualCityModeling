@@ -230,7 +230,7 @@ public class CityCreate : MonoBehaviour
     public GameObject ParentObj;                        // 親となるオブジェクト
     public Material LineMaterial;                       // Lineのマテリアル
     public Color LineColor;                             // Lineの色
-    float widthCoefficient = 1.0f;                      // Lineの幅係数
+    float widthCoefficient = 0.1f;                      // Lineの幅係数
     public float lineWidth;                             // Lineの幅
     public GameObject Build;                            // 建物のオブジェクト
     public GameObject Buildings;                        // 建物群の親
@@ -251,6 +251,12 @@ public class CityCreate : MonoBehaviour
     public GameObject CrossObj;                         // 交点確認用オブジェクト  
 
     public Material buildingMaterial;
+
+    public GameObject CameraObj;
+    private Camera camera;
+    private Bitmap bitmap;
+    public GameObject bit;
+    private bool isWeightPainting = false;
 
     public GameObject Floor;                            // 床オブジェクト
     public GameObject Guide;                            // ガイドの床
@@ -280,20 +286,48 @@ public class CityCreate : MonoBehaviour
         CrossPropaties = new List<CrossPropaty>();
         Vertex_and_Intersections = new List<List<VertexAttribute>>();
         AreaObjects = new List<GameObject>();
-        List<List<Vertex>> linesVertices = new List<List<Vertex>>();        
+        List<List<Vertex>> linesVertices = new List<List<Vertex>>();
+        StraightRenderer.GetComponent<LineRenderer>().startWidth = widthCoefficient * lineWidth;
+        StraightRenderer.GetComponent<LineRenderer>().endWidth = widthCoefficient * lineWidth;
         // 曲線をまとめる親Obj
         LinesObj = Instantiate(ParentObj, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
         LinesObj.name = "Lines";
 
         Buildings = Instantiate(ParentObj, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
+
+        camera = CameraObj.GetComponent<Camera>();
+        bitmap = new Bitmap(80, 60, camera);
+        bitmap.ViewBitParametor(bit);
+        bitmap.WeightPaintMode(false);
         // DebugTest();
     }
 
     // Update is called once per frame
     void Update()
     {
+        // タブキーでウェイトペイントモードに切り替え
+        if (Input.GetKeyDown(KeyCode.Tab)) {
+            isWeightPainting = !isWeightPainting;
+            if (isWeightPainting == true) bitmap.WeightPaintMode(true);
+            else bitmap.WeightPaintMode(false);
+        }
 
-        if (Input.GetMouseButtonDown(0) && build_flag == false)
+        if (Input.GetMouseButton(0) && isWeightPainting == true)
+        {
+            Vector3 mouseScreenPosition = Input.mousePosition;
+            mouseScreenPosition = Camera.main.ScreenToWorldPoint(mouseScreenPosition);
+            Vector2 mouseWorldPosition = new Vector2(mouseScreenPosition.x, mouseScreenPosition.z);
+            bitmap.UseBrush(mouseWorldPosition, 20f, 0.3f);
+        }
+        if (Input.GetMouseButtonDown(1) && isWeightPainting == true)
+        {
+            Vector3 mouseScreenPosition = Input.mousePosition;
+            mouseScreenPosition = Camera.main.ScreenToWorldPoint(mouseScreenPosition);
+            Vector2 mouseWorldPosition = new Vector2(mouseScreenPosition.x, mouseScreenPosition.z);
+            Debug.Log("weight = " + bitmap.GetWeight(mouseWorldPosition));
+        }
+
+        if (Input.GetMouseButtonDown(0) && build_flag == false && isWeightPainting == false)
         {
             AddLineObject();
             if (straight_flag == true)
@@ -303,14 +337,14 @@ public class CityCreate : MonoBehaviour
 
                 // 直線の状態を見せるため
                 StraightList = new List<Vector3>();
-                StraightList.Add(Camera.main.ScreenToWorldPoint(new Vector3(Mathf.Floor(Input.mousePosition.x), Mathf.Floor(Input.mousePosition.y), 1.0f)));
+                StraightList.Add(Camera.main.ScreenToWorldPoint(new Vector3(Mathf.Floor(Input.mousePosition.x), Mathf.Floor(Input.mousePosition.y), 1.0f)));                
                 StraightObj = Instantiate(StraightRenderer, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
 
             }
         }
 
         // LineRendererに位置データを指定しておく
-        if (Input.GetMouseButton(0) && build_flag == false)
+        if (Input.GetMouseButton(0) && build_flag == false && isWeightPainting == false)
         {
             // 直線ツールを使っていないとき
             if(straight_flag == false)
@@ -334,7 +368,7 @@ public class CityCreate : MonoBehaviour
             
         }
 
-        if (Input.GetMouseButtonUp(0) && build_flag == false)      // (建物が生成されている間は無効)
+        if (Input.GetMouseButtonUp(0) && build_flag == false && isWeightPainting == false)      // (建物が生成されている間は無効)
         {
             // 直線ツールを起動していたら
             if (straight_flag == true)
@@ -365,25 +399,25 @@ public class CityCreate : MonoBehaviour
         }
 
         // Lineの幅
-        if (Input.GetKeyDown(KeyCode.Keypad1) && build_flag == false)  // 1車線
+        if (Input.GetKeyDown(KeyCode.Keypad1) && build_flag == false && isWeightPainting == false)  // 1車線
         {
             widthCoefficient = 0.25f / 2.0f;
             // LineWidthText.GetComponent<Text>().text = "1車線";
         }
 
-        if (Input.GetKeyDown(KeyCode.Keypad2) && build_flag == false)  // 2車線
+        if (Input.GetKeyDown(KeyCode.Keypad2) && build_flag == false && isWeightPainting == false)  // 2車線
         {
             widthCoefficient = 0.25f;
             // LineWidthText.GetComponent<Text>().text = "2車線";
         }
 
-        if (Input.GetKeyDown(KeyCode.Keypad3) && build_flag == false)  // 3車線
+        if (Input.GetKeyDown(KeyCode.Keypad3) && build_flag == false && isWeightPainting == false)  // 3車線
         {
             widthCoefficient = 0.5f;
             // LineWidthText.GetComponent<Text>().text = "3車線";
         }
 
-        if (Input.GetKeyDown(KeyCode.Keypad4) && build_flag == false)  // 4車線
+        if (Input.GetKeyDown(KeyCode.Keypad4) && build_flag == false && isWeightPainting == false)  // 4車線
         {
             widthCoefficient = 1.0f;
             // LineWidthText.GetComponent<Text>().text = "4車線";
@@ -394,9 +428,7 @@ public class CityCreate : MonoBehaviour
         {
 
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-
-            
+            sw.Start();            
             
             linesVertices = new List<List<Vertex>>();
             foreach (List<Vector3> ls in Lines)
@@ -596,19 +628,44 @@ public class CityCreate : MonoBehaviour
 
             List<List<Cell>> cellsList = new List<List<Cell>>();
             // 面積を計算して、その大きさに応じた母点数で分割
-            // ボロノイ分割
-            
+            // ボロノイ分割            
             foreach(Polygon p in polygons)
             {
+                // Debug.Log("!");
                 // float area = p.GetArea();
                 // Debug.Log("area = " + area);
                 // 100m * 100mで建物10個くらい　1000m^2で1個
                 List<Cell> cells = new List<Cell>();
-                cells = new IncrementalVoronoi().Execute(p, 6);
-                foreach (Cell c in cells) Instantiate(CrossObj, new Vector3(c.cellPos.x, 0f, c.cellPos.y), Quaternion.identity);
-                cellsList.Add(cells);
-            }
+                bool mustContinue = false;
+                int safety = 0;
+                while (true)
+                {
+                    cells = new IncrementalVoronoi().Execute(p, 6, bitmap);
+                    foreach (Cell c in cells)
+                    {
+                        if (c.GetVerts().Count < 3 || c.GetEdges().Count < 3) mustContinue = true;
+                    }
+                    if (mustContinue == false) break;
+                    if (safety > 10000)
+                    {
+                        Debug.Log("アカンかったわ");
+                        break;
+                    }
+                    safety++;
+                }
 
+                // Debug.Log(cells.Count);
+
+                //foreach (Cell c in cells) {
+                //    c.ViewParametor();
+                //    c.DrawCell(Color.white);
+                //}
+
+                foreach (Cell c in cells) Instantiate(CrossObj, new Vector3(c.GetCellPos().x, 300f, c.GetCellPos().y), Quaternion.identity);
+                
+                cellsList.Add(cells);                
+            }            
+            
             // GreinerHormannクリッピング
             List<List<Polygon>> buildingFloors = new List<List<Polygon>>();            
             for(int i = 0; i < cellsList.Count; i++)
@@ -628,14 +685,14 @@ public class CityCreate : MonoBehaviour
                     foreach(List<Vector2> l in clippedPolygons)
                     {
                         Polygon poly = new Polygon(l);
+                        // Polygon manhattanPoly = poly.Manhattan();
                         polyList.Add(poly);
                         // poly = poly.Manhattan();
-                        // poly.DrawPolygon(Color.white);
+                        // poly.DrawPolygon(new Color(Random.value, Random.value, Random.value, 1f));
                     }
                     buildingFloors.Add(polyList);
                 }
-            }
-            
+            }            
             // ポリゴン縮小
             foreach(List<Polygon> list in buildingFloors)
             {
@@ -643,12 +700,14 @@ public class CityCreate : MonoBehaviour
                 {
                     p.ReductionPolygons();
                     // p.DrawPolygon(Color.white);
+                    // p.DrawPolygon(Color.white);
                 }
             }
 
             // 建物生成
             GenerateBuildings(buildingFloors);
 
+        
             build_flag = true;                   
             // 床と眺めるカメラを設置
             Guide.SetActive(false);
@@ -846,7 +905,7 @@ public class CityCreate : MonoBehaviour
     {
         // 座標の変換を行いマウス位置を取得
         Vector3 screenPosition01 = new Vector3(Mathf.Floor(Input.mousePosition.x), Mathf.Floor(Input.mousePosition.y), 1.0f);
-        var mousePosition = Camera.main.ScreenToWorldPoint(screenPosition01);
+        Vector3 mousePosition = new Vector3(Camera.main.ScreenToWorldPoint(screenPosition01).x, 0f, Camera.main.ScreenToWorldPoint(screenPosition01).z);
         // Debug.Log(mousePosition);
 
         Line.Add(mousePosition);
@@ -1303,24 +1362,29 @@ public class CityCreate : MonoBehaviour
 
     private void CreateBuildingMesh(Polygon polygon)
     {
+        if (polygon.GetVertices().Count < 3) return;
         GameObject obj = new GameObject("Building", new[] { typeof(MeshFilter), typeof(MeshRenderer) });
         // polygon.DrawPolygon(Color.red);
 
-        float area = GetArea(polygon) / 100f;
-        Debug.Log(area);
+        // 1m : 0.01
+        float scale = 0.1f;
+        float area = GetArea(polygon) *scale;
+        // Debug.Log(area);
         float height = 0f;
-        if (area <= 60f) height = Random.Range(10.0f, 50.0f);
-        else if (area <= 100f) height = Random.Range(10.0f, 110.0f);
-        else height = Random.Range(700.0f, 110.0f);
+        if (area <= 60f) height = Random.Range(10f, 50f);
+        else if (area <= 100f) height = Random.Range(10f, 110f);
+        else height = Random.Range(70f, 110f);
 
         List<Polygon> roof = new SplitTriangles().Excecute(polygon);
         List<Vector3> meshVertex = new List<Vector3>();        
         List<int> meshIndex = new List<int>();          // 壁、屋根のインデックス
+        // polygon.ViewParametor();
 
         // 壁の頂点の追加、インデックスの設定
         int size = polygon.GetVertices().Count;
         for (int i = 0; i < size; i++)
         {
+            
             meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, 0f, polygon.GetVertices()[i].y));
             meshVertex.Add(new Vector3(polygon.GetVertices()[i].x, height, polygon.GetVertices()[i].y));
             meshVertex.Add(new Vector3(polygon.GetVertices()[(i + 1) % size].x, 0f, polygon.GetVertices()[(i + 1) % size].y));
@@ -1335,8 +1399,8 @@ public class CityCreate : MonoBehaviour
 
             meshIndex.Add((i * 6) + 3);
             meshIndex.Add((i * 6) + 4);
-            meshIndex.Add((i * 6) + 5);            
-
+            meshIndex.Add((i * 6) + 5); 
+            
         }
         //for (int i = 0; i < size; i++)
         //{
@@ -1392,15 +1456,18 @@ public class CityCreate : MonoBehaviour
     // 多角形の面積を計算
     public float GetArea(Polygon polygon)
     {
-        List<Vector2> vertices = polygon.GetVertices();
+        List<Vector2> vertices = new List<Vector2>(polygon.GetVertices());
         float area = 0f;
-        List<Polygon> triangles = new SplitTriangles().Excecute(new Polygon(vertices));
-        foreach (Polygon p in triangles)
+        if(polygon.GetVertices().Count > 3)
         {
-            Vector2 AB = p.GetVertex(1) - p.GetVertex(0);
-            Vector2 AC = p.GetVertex(2) - p.GetVertex(0);
-            area += Mathf.Abs(GeomUtils.Cross(AB, AC) * 0.5f);
-        }
+            List<Polygon> triangles = new SplitTriangles().Excecute(new Polygon(vertices));
+            foreach (Polygon p in triangles)
+            {
+                Vector2 AB = p.GetVertex(1) - p.GetVertex(0);
+                Vector2 AC = p.GetVertex(2) - p.GetVertex(0);
+                area += Mathf.Abs(GeomUtils.Cross(AB, AC) * 0.5f);
+            }
+        }        
         return area;
     }
     // 閉領域を検出
