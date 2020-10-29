@@ -692,9 +692,20 @@ public class CityCreate : MonoBehaviour
                     }
                     buildingFloors.Add(polyList);
                 }
-            }            
+            }
+            /*
+            foreach (List<Polygon> list in buildingFloors)
+            {
+                foreach (Polygon p in list)
+                {
+                    //p.ReductionPolygons();
+                    p.DrawPolygon(Color.blue);
+                    // p.DrawPolygon(Color.white);
+                }
+            }
+            */
             // ポリゴン縮小
-            foreach(List<Polygon> list in buildingFloors)
+            foreach (List<Polygon> list in buildingFloors)
             {
                 foreach(Polygon p in list)
                 {
