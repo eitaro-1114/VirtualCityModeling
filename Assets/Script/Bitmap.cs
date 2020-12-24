@@ -45,10 +45,9 @@ public class Bitmap : MonoBehaviour
     }
 
     // ビットの重みを加える
-    private void Addweight(Vector2 mousePos, float weight)
+    private void Addweight(int[] bitCoordinate, float weight)
     {
-        // ビットの場所を特定
-        int[] bitCoordinate = ConvertToBitCoordinate(mousePos);        
+        // ビットの場所を特定    
         int bitI = bitCoordinate[0];
         int bitJ = bitCoordinate[1];
         // Debug.Log("i , j = " + bitI + ", " + bitJ);
@@ -82,27 +81,29 @@ public class Bitmap : MonoBehaviour
 
     // ブラシを使用して重みを加える
     public void UseBrush(Vector2 mousePos, float radius, float weight)
-    {        
-        // ブラシの直径
-        int diametorX = Mathf.CeilToInt(radius / bitWidth) * 2 - 1;
-        int diametorY = Mathf.CeilToInt(radius / bitHeight) * 2 - 1;
+    {
+        // ビットブラシの半径
+        int radiusX = Mathf.CeilToInt(radius / bitWidth);
+        int radiusY = Mathf.CeilToInt(radius / bitHeight);
+        // ビットブラシの直径
+        int diametorX = radiusX * 2 + 1;
+        int diametorY = radiusY * 2 + 1;
         // Debug.Log("radius = " + radius + "  bitWidth = " + bitWidth + "  bitHeight = " + bitHeight + "  X = " + diametorX + "  Y = " + diametorY); 
 
         // ブラシの原点(左上)
-        Vector2 brushOrigin = new Vector2(mousePos.x - radius, mousePos.y + radius);
-        for(int i = 1; i < diametorY + 1 ; i++)
+        // Vector2 brushOrigin = new Vector2(mousePos.x - radius, mousePos.y + radius);
+        // ブラシの中心(ビットマップ)
+        int[] brushCenter = ConvertToBitCoordinate(mousePos);
+        // ブラシの原点(左上)
+        int[] brushOrigin = { brushCenter[0] - radiusX, brushCenter[1] - radiusY };
+        for(int j = 0; j < diametorY; j++)
         {
-            for(int j = 1; j < diametorX + 1; j++)
+            for(int i = 0; i < diametorX; i++)
             {
-                Vector2 point = new Vector2(brushOrigin.x + bitWidth * j, brushOrigin.y - bitHeight * i);
-                // 円を記述(ビットが荒すぎて使えない)
-                float distance = (point - mousePos).magnitude;                
-                if (distance < radius)
-                {
-                    Addweight(point, weight);
-                }
-                // Debug.Log(point);
-                // Addweight(point, weight);
+                int[] point = { brushOrigin[0] + i, brushOrigin[1] + j };
+                float distance = (point[0] - brushCenter[0]) * (point[0] - brushCenter[0]) + (point[1] - brushCenter[1]) * (point[1] - brushCenter[1]);
+                if(distance < radiusX * radiusX) Addweight(point, weight);
+
             }
         }
     }
@@ -114,6 +115,7 @@ public class Bitmap : MonoBehaviour
       
         // グローバル座標をスクリーン座標に変換
         Vector2 screenCoordinate = worldCoordinate - screenOrigin;
+
         // Debug.Log("world = " + worldCoordinate + "  screen = " + screenOrigin + "screenCoordinate = " + screenCoordinate);
 
         // y軸反転
@@ -124,6 +126,8 @@ public class Bitmap : MonoBehaviour
         int bitY = Mathf.FloorToInt(screenCoordinate.y / bitHeight);
         bitCoordinate[0] = bitX;
         bitCoordinate[1] = bitY;
+
+        // Debug.Log(bitX + " " + bitY);
 
         // Debug.Log("x = " + bitX + ", y = " + bitY);
         return bitCoordinate;

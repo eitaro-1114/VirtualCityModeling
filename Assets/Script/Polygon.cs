@@ -84,6 +84,12 @@ public class Polygon
         return vertices;
     }
 
+    // 頂点数の取得
+    public int GetVertCount()
+    {
+        return vertices.Count();
+    }
+
     // 指定位置の辺の取得
     public LineSegment GetEdge(int index)
     {
@@ -1003,19 +1009,14 @@ public class SplitTriangles
     public List<Polygon> Excecute(Polygon p)
     {
         List<Vector2> DetectPoints = new List<Vector2>(p.GetVertices());
-        List<Polygon> triangles = new List<Polygon>();
-        if(DetectPoints.Count < 3)
-        {
-            Debug.Log("Fuck");
-            p.ViewParametor();
-        }
+        List<Polygon> triangles = new List<Polygon>();        
 
         while (mustContinue)
         {
             List<Vector2> triangleVerts = new List<Vector2>();
 
             Vector2 farPoint = new Vector2();
-            int? farIndex = null;
+            int farIndex = 0;
             // 原点から最も遠い頂点を探す①
             for (int i = 0; i < DetectPoints.Count; i++)
             {
@@ -1034,11 +1035,19 @@ public class SplitTriangles
 
             // 最も遠い頂点の隣にある2頂点A, B
             Vector2 farPoint_A = new Vector2();
-            farPoint_A = DetectPoints[(DetectPoints.Count() + farIndex.Value + 1) % DetectPoints.Count()];
+
+            if (DetectPoints.Count < 3)
+            {
+                Debug.Log("size == 0");
+                p.ViewParametor();
+                return triangles;
+            }
+
+            farPoint_A = DetectPoints[(DetectPoints.Count() + farIndex + 1) % DetectPoints.Count()];
             triangleVerts.Add(farPoint_A);
 
             Vector2 farPoint_B = new Vector2();
-            farPoint_B = DetectPoints[(DetectPoints.Count() + farIndex.Value - 1) % DetectPoints.Count()];
+            farPoint_B = DetectPoints[(DetectPoints.Count() + farIndex - 1) % DetectPoints.Count()];
             triangleVerts.Add(farPoint_B);
 
             // farPointとAB(以下3点)からなる三角形の外積を保存
@@ -1048,7 +1057,7 @@ public class SplitTriangles
             Polygon triangle = new Polygon(triangleVerts);
 
             // 内部に頂点があれば
-            if (Contains(triangle, farIndex.Value, DetectPoints))
+            if (Contains(triangle, farIndex, DetectPoints))
             {
                 bool mustSearch = true;
                 while (mustSearch)
@@ -1069,7 +1078,7 @@ public class SplitTriangles
                         farIndex = (DetectPoints.IndexOf(farPoint));
                         Polygon triangleProto = new Polygon(triangleVertsProto);
                         // なければ
-                        if (!Contains(triangleProto, farIndex.Value, DetectPoints))
+                        if (!Contains(triangleProto, farIndex, DetectPoints))
                         {
                             // 三角形をListに追加。farPointをDetectPointsから削除して①に戻る
                             triangles.Add(triangleProto);
@@ -1357,7 +1366,7 @@ public class IncrementalVoronoi
 
                 // 垂直二等分線を見つける
                 Vector2 vecBetween = (newCell.GetCellPos() - existingCell.GetCellPos()).normalized;   // 正規化ベクトル
-                Vector2 pbVec = new Vector2(vecBetween.y, -vecBetween.x);
+                // Vector2 pbVec = new Vector2(vecBetween.y, -vecBetween.x);
                 Vector2 centerPos = (newCell.GetCellPos() + existingCell.GetCellPos()) * 0.5f;
 
                 // 消去する点と辺を保持するリスト
@@ -1465,6 +1474,8 @@ public class IncrementalVoronoi
         // 最初の4つの領域を消去
         cells.RemoveRange(0, 4);
 
+        // 条件に合わないセルを削除
+        cells.RemoveAll(s => s.GetEdges().Count < 3);
         CCWSort(cells);
 
         return cells;
@@ -1516,27 +1527,27 @@ public class IncrementalVoronoi
     }
 
     // 点が線上か、右か、左にあるかを調べる
-    private float DistanceFromPointToLine(Vector2 planeNormal, Vector2 planePos, Vector2 pointPos)
+    private float DistanceFromPointToLine(Vector2 vecBetween, Vector2 centerPos, Vector2 edgePos)
     {
-        return Vector2.Dot(planeNormal, pointPos - planePos);
+        return Vector2.Dot(vecBetween, edgePos - centerPos);
     }
 
-    private bool AreLinePlaneIntersecting(Vector2 planeNormal, Vector2 planePos, Vector2 linePos1, Vector2 linePos2)
+    private bool AreLinePlaneIntersecting(Vector2 vec, Vector2 centerPos, Vector2 edge1, Vector2 edge2)
     {
         bool areIntersecting = false;
 
-        Vector2 lineDir = (linePos1 - linePos2);
-        float denominator = Vector2.Dot(-planeNormal, lineDir);     // 分母
+        Vector2 lineDir = (edge1 - edge2);
+        float denominator = Vector2.Dot(-vec, lineDir);     // 分母
 
         // No intersection if the line and plane are parallell
         if (denominator > 0.000001f || denominator < -0.000001f)
         {
-            Vector2 vecBetween = planePos - linePos1;
+            Vector2 vecBetween = centerPos - edge1;
 
-            float t = Vector2.Dot(vecBetween, -planeNormal) / denominator;
+            float t = Vector2.Dot(vecBetween, -vec) / denominator;
 
-            Vector2 intersectionPoint = linePos1 + lineDir * t;
-            if (IsPointBetweenPoints(linePos1, linePos2, intersectionPoint))
+            Vector2 intersectionPoint = edge1 + lineDir * t;
+            if (IsPointBetweenPoints(edge1, edge2, intersectionPoint))
             {
                 areIntersecting = true;
             }
@@ -1565,15 +1576,15 @@ public class IncrementalVoronoi
         return isBetween;
     }
 
-    private Vector2 GetLinesIntersectionCoordinate(Vector2 planeNormal, Vector2 planePos, Vector2 linePos1, Vector2 linePos2)
+    private Vector2 GetLinesIntersectionCoordinate(Vector2 vecBetween, Vector2 centerPos, Vector2 linePos1, Vector2 linePos2)
     {
-        Vector2 vecBetween = planePos - linePos1;
+        Vector2 vec = centerPos - linePos1;
 
         Vector2 lineDir = (linePos1 - linePos2).normalized;
 
-        float denominator = Vector2.Dot(-planeNormal, lineDir);
+        float denominator = Vector2.Dot(-vecBetween, lineDir);
 
-        float t = Vector2.Dot(vecBetween, -planeNormal) / denominator;
+        float t = Vector2.Dot(vec, -vecBetween) / denominator;
 
         Vector2 intersectionPoint = linePos1 + lineDir * t;
 

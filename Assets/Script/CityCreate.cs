@@ -296,7 +296,7 @@ public class CityCreate : MonoBehaviour
         Buildings = Instantiate(ParentObj, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
 
         camera = CameraObj.GetComponent<Camera>();
-        bitmap = new Bitmap(80, 60, camera);
+        bitmap = new Bitmap(50, 80, camera);
         bitmap.ViewBitParametor(bit);
         bitmap.WeightPaintMode(false);
         // DebugTest();
@@ -317,7 +317,8 @@ public class CityCreate : MonoBehaviour
             Vector3 mouseScreenPosition = Input.mousePosition;
             mouseScreenPosition = Camera.main.ScreenToWorldPoint(mouseScreenPosition);
             Vector2 mouseWorldPosition = new Vector2(mouseScreenPosition.x, mouseScreenPosition.z);
-            bitmap.UseBrush(mouseWorldPosition, 20f, 0.3f);
+            bitmap.UseBrush(mouseWorldPosition, 10f, 0.3f);
+            
         }
         if (Input.GetMouseButtonDown(1) && isWeightPainting == true)
         {
@@ -661,7 +662,7 @@ public class CityCreate : MonoBehaviour
                 //    c.DrawCell(Color.white);
                 //}
 
-                foreach (Cell c in cells) Instantiate(CrossObj, new Vector3(c.GetCellPos().x, 300f, c.GetCellPos().y), Quaternion.identity);
+                // foreach (Cell c in cells) Instantiate(CrossObj, new Vector3(c.GetCellPos().x, 300f, c.GetCellPos().y), Quaternion.identity);
                 
                 cellsList.Add(cells);                
             }            
